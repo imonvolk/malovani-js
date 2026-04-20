@@ -4,22 +4,12 @@ const colorPicker = document.getElementById('colorPicker');
 const brushSize = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
 const clearBtn = document.getElementById('clearBtn');
-const brushBtn = document.getElementById('brushBtn');
-const eraserBtn = document.getElementById('eraserBtn');
-const zoomInBtn = document.getElementById('zoomInBtn');
-const zoomOutBtn = document.getElementById('zoomOutBtn');
-const resetZoomBtn = document.getElementById('resetZoomBtn');
-const zoomLevel = document.getElementById('zoomLevel');
-const colorPresets = document.querySelectorAll('.color-preset');
-const brushShapes = document.querySelectorAll('.brush-shape');
-
-const userCount = document.getElementById('userCount');
 
 const socket = io();
 
-// Update user count
-socket.on('userCount', (count) => {
-  userCount.textContent = count;
+// Update brush size display
+brushSize.addEventListener('input', () => {
+  brushSizeValue.textContent = brushSize.value;
 });
 
 // Drawing state
@@ -37,92 +27,14 @@ ctx.lineJoin = 'round';
 ctx.lineCap = 'round';
 ctx.lineWidth = brushSize.value;
 ctx.strokeStyle = colorPicker.value;
-ctx.fillStyle = colorPicker.value;
 
 // Update brush properties when changed
 colorPicker.addEventListener('change', () => {
   ctx.strokeStyle = colorPicker.value;
-  ctx.fillStyle = colorPicker.value;
 });
 
 brushSize.addEventListener('input', () => {
   ctx.lineWidth = brushSize.value;
-  brushSizeValue.textContent = brushSize.value;
-});
-
-// Color presets
-colorPresets.forEach(preset => {
-  preset.addEventListener('click', () => {
-    const color = preset.dataset.color;
-    colorPicker.value = color;
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
-    // Remove selected class from all presets
-    colorPresets.forEach(p => p.classList.remove('selected'));
-    // Add selected class to clicked preset
-    preset.classList.add('selected');
-  });
-});
-
-// Tool selection
-brushBtn.addEventListener('click', () => {
-  currentTool = 'brush';
-  brushBtn.classList.add('active');
-  eraserBtn.classList.remove('active');
-  ctx.strokeStyle = colorPicker.value;
-  ctx.fillStyle = colorPicker.value;
-});
-
-eraserBtn.addEventListener('click', () => {
-  currentTool = 'eraser';
-  eraserBtn.classList.add('active');
-  brushBtn.classList.remove('active');
-  ctx.strokeStyle = 'white';
-  ctx.fillStyle = 'white';
-});
-
-// Brush shapes
-brushShapes.forEach(shape => {
-  shape.addEventListener('click', () => {
-    currentShape = shape.dataset.shape;
-    brushShapes.forEach(s => s.classList.remove('selected'));
-    shape.classList.add('selected');
-  });
-});
-
-// Zoom controls
-zoomInBtn.addEventListener('click', () => {
-  zoom *= 1.2;
-  updateZoom();
-});
-
-zoomOutBtn.addEventListener('click', () => {
-  zoom /= 1.2;
-  updateZoom();
-});
-
-resetZoomBtn.addEventListener('click', () => {
-  zoom = 1;
-  panX = 0;
-  panY = 0;
-  updateZoom();
-});
-
-function updateZoom() {
-  ctx.setTransform(zoom, 0, 0, zoom, panX, panY);
-  zoomLevel.textContent = Math.round(zoom * 100) + '%';
-  // Re-draw canvas content if needed (for now, just update display)
-}
-
-// Mouse wheel zoom
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  if (e.deltaY < 0) {
-    zoom *= 1.1;
-  } else {
-    zoom /= 1.1;
-  }
-  updateZoom();
 });
 
 // Drawing functions
@@ -145,19 +57,19 @@ function drawShape(x, y) {
 function draw(e) {
   if (!isDrawing) return;
 
-  const x = e.offsetX;
-  const y = e.offsetY;
-
-  drawShape(x, y);
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
 
   // Send drawing data to server
   socket.emit('draw', {
-    x: x,
-    y: y,
+    x0: lastX,
+    y0: lastY,
+    x1: e.offsetX,
+    y1: e.offsetY,
     color: ctx.strokeStyle,
-    size: ctx.lineWidth,
-    shape: currentShape,
-    tool: currentTool
+    size: ctx.lineWidth
   });
 
   lastX = x;
@@ -167,8 +79,8 @@ function draw(e) {
 // Event listeners for mouse
 canvas.addEventListener('mousedown', (e) => {
   isDrawing = true;
-  lastX = e.offsetX;
-  lastY = e.offsetY;
+  lastX = (e.offsetX - panX) / zoomLevel;
+  lastY = (e.offsetY - panY) / zoomLevel;
 });
 
 canvas.addEventListener('mousemove', draw);
@@ -180,8 +92,8 @@ canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
-  lastX = touch.clientX - rect.left;
-  lastY = touch.clientY - rect.top;
+  lastX = (touch.clientX - rect.left - panX) / zoomLevel;
+  lastY = (touch.clientY - rect.top - panY) / zoomLevel;
   isDrawing = true;
 });
 
@@ -190,10 +102,10 @@ canvas.addEventListener('touchmove', (e) => {
   if (!isDrawing) return;
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
+  const offsetX = touch.clientX - rect.left;
+  const offsetY = touch.clientY - rect.top;
 
-  draw({ offsetX: x, offsetY: y });
+  draw({ offsetX, offsetY });
 });
 
 canvas.addEventListener('touchend', () => {
@@ -202,40 +114,26 @@ canvas.addEventListener('touchend', () => {
 
 // Clear canvas
 clearBtn.addEventListener('click', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawingHistory = [];
+  redrawCanvas();
   socket.emit('clear');
 });
 
 // Listen for drawing events from other users
 socket.on('draw', (data) => {
-  // Save current context
-  const savedStrokeStyle = ctx.strokeStyle;
-  const savedFillStyle = ctx.fillStyle;
-  const savedLineWidth = ctx.lineWidth;
-
-  // Set received properties
   ctx.strokeStyle = data.color;
-  ctx.fillStyle = data.color;
   ctx.lineWidth = data.size;
-
-  // Draw the shape
-  if (data.shape) {
-    drawShape(data.x, data.y);
-  } else {
-    // Fallback for old line-based drawing
-    ctx.beginPath();
-    ctx.moveTo(data.x0, data.y0);
-    ctx.lineTo(data.x1, data.y1);
-    ctx.stroke();
-  }
-
+  ctx.beginPath();
+  ctx.moveTo(data.x0, data.y0);
+  ctx.lineTo(data.x1, data.y1);
+  ctx.stroke();
   // Reset to current user's settings
-  ctx.strokeStyle = savedStrokeStyle;
-  ctx.fillStyle = savedFillStyle;
-  ctx.lineWidth = savedLineWidth;
+  ctx.strokeStyle = colorPicker.value;
+  ctx.lineWidth = brushSize.value;
 });
 
 // Listen for clear events from other users
 socket.on('clear', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawingHistory = [];
+  redrawCanvas();
 });

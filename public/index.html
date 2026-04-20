@@ -138,24 +138,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Malování</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0f0f0f;
-      --surface: #1a1a1a;
-      --border: #2a2a2a;
-      --text: #e0e0e0;
-      --muted: #666;
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
     }
-
-    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; height: 100vh; overflow: hidden; }
-
-    /* Join screen */
-    #join-screen {
-      position: fixed; inset: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--bg);
+    h1 {
+      display: none;
     }
+<<<<<<< HEAD
 
     #join-box {
       background: var(--surface);
@@ -419,20 +415,41 @@
       transform: translate(-4px, -4px);
       display: flex; flex-direction: column; align-items: flex-start;
       gap: 3px;
+=======
+    #canvas {
+      flex: 1;
+      display: block;
+      background-color: white;
+      cursor: crosshair;
+      border: none;
     }
-    .cursor-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.6);
+    .controls {
+      background-color: #333;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+>>>>>>> d30486cb21efc686f2e907c5db8ede4c3c324cbf
     }
-    .cursor-label {
-      background: rgba(0,0,0,.65);
-      color: #fff;
-      font-size: .7rem;
-      padding: 2px 6px;
+    label {
+      color: white;
+      font-size: 14px;
+      margin: 0;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 0;
+      font-size: 14px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
       border-radius: 4px;
-      white-space: nowrap;
+      transition: background-color 0.2s;
     }
+<<<<<<< HEAD
 
     /* Users panel */
     #users-panel {
@@ -446,13 +463,41 @@
       max-width: 160px;
       backdrop-filter: blur(6px);
 >>>>>>> 9fc6f8d60e749705f78ac4adfdfbe96b2b6463bf
+=======
+    button:hover {
+      background-color: #45a049;
     }
-    #users-panel h3 { font-size: .7rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
-    .user-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
-    .user-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    #colorPicker {
+      width: 45px;
+      height: 35px;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #brushSize {
+      width: 80px;
+    }
+    #brushSizeValue {
+      color: white;
+      font-size: 14px;
+      min-width: 25px;
+    }
+    .zoom-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #zoomLevel {
+      color: white;
+      font-size: 14px;
+      min-width: 50px;
+      text-align: center;
+>>>>>>> d30486cb21efc686f2e907c5db8ede4c3c324cbf
+    }
   </style>
 </head>
 <body>
+<<<<<<< HEAD
 <<<<<<< HEAD
   <div class="window">
     <div class="title-bar">
@@ -571,266 +616,25 @@
     <div id="my-chip">
       <div id="my-dot"></div>
       <span id="my-name"></span>
+=======
+  <h1>Sdílené Malování v Reálném Čase</h1>
+  <canvas id="canvas"></canvas>
+  <div class="controls">
+    <label for="colorPicker">Barva:</label>
+    <input type="color" id="colorPicker" value="#000000">
+    <label for="brushSize">Štětec:</label>
+    <input type="range" id="brushSize" min="1" max="50" value="5">
+    <span id="brushSizeValue">5</span>
+    <div class="zoom-controls">
+      <button id="zoomOut">−</button>
+      <span id="zoomLevel">100%</span>
+      <button id="zoomIn">+</button>
+>>>>>>> d30486cb21efc686f2e907c5db8ede4c3c324cbf
     </div>
+    <button id="clearBtn">Vymazat</button>
   </div>
 
-  <div id="canvas-area">
-    <canvas id="main-canvas"></canvas>
-  </div>
-
-  <div id="users-panel">
-    <h3>Online</h3>
-    <div id="users-list"></div>
-  </div>
-</div>
-
-<script>
-  let myId, myColor, myUsername;
-  let brushColor = '#e74c3c';
-  let brushSize = 5;
-  let erasing = false;
-  let drawing = false;
-  let lastPt = null;
-  let currentPoints = [];
-
-  const remoteUsers = new Map();
-
-  const PALETTE = [
-    '#1a1a1a','#ffffff','#e74c3c','#e67e22',
-    '#f1c40f','#2ecc71','#3498db','#9b59b6',
-  ];
-
-  const joinScreen  = document.getElementById('join-screen');
-  const appEl       = document.getElementById('app');
-  const canvasArea  = document.getElementById('canvas-area');
-  const canvas      = document.getElementById('main-canvas');
-  const ctx         = canvas.getContext('2d');
-  const paletteEl   = document.getElementById('palette');
-  const sizeSlider  = document.getElementById('size-slider');
-  const eraserBtn   = document.getElementById('eraser-btn');
-  const clearBtn    = document.getElementById('clear-btn');
-  const customColor = document.getElementById('custom-color');
-  const usersList   = document.getElementById('users-list');
-
-  function resizeCanvas() {
-    const w = canvasArea.offsetWidth;
-    const h = canvasArea.offsetHeight;
-    if (!w || !h) return;
-    const tmp = document.createElement('canvas');
-    tmp.width = canvas.width;
-    tmp.height = canvas.height;
-    tmp.getContext('2d').drawImage(canvas, 0, 0);
-    canvas.width = w;
-    canvas.height = h;
-    ctx.drawImage(tmp, 0, 0);
-  }
-
-  function replayStroke(stroke) {
-    const { points, color, size } = stroke;
-    if (points.length < 2) return;
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.moveTo(points[0].x * canvas.width, points[0].y * canvas.height);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x * canvas.width, points[i].y * canvas.height);
-    }
-    ctx.stroke();
-  }
-
-  function getPos(e) {
-    const r = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return {
-      x: (src.clientX - r.left) / canvas.width,
-      y: (src.clientY - r.top)  / canvas.height,
-    };
-  }
-
-  function startDraw(e) {
-    drawing = true;
-    lastPt = getPos(e);
-    currentPoints = [lastPt];
-  }
-
-  function moveDraw(e) {
-    e.preventDefault();
-    const pt = getPos(e);
-    throttledCursorSend(pt);
-    if (!drawing) return;
-    currentPoints.push(pt);
-    ctx.beginPath();
-    ctx.strokeStyle = erasing ? '#ffffff' : brushColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    if (lastPt) ctx.moveTo(lastPt.x * canvas.width, lastPt.y * canvas.height);
-    ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
-    ctx.stroke();
-    lastPt = pt;
-  }
-
-  function endDraw() {
-    if (!drawing) return;
-    drawing = false;
-    if (currentPoints.length >= 2) {
-      ws.send(JSON.stringify({
-        type: 'stroke',
-        color: erasing ? '#ffffff' : brushColor,
-        size: brushSize,
-        points: currentPoints,
-      }));
-    }
-    currentPoints = [];
-    lastPt = null;
-  }
-
-  let lastCursorSend = 0;
-  function throttledCursorSend(pt) {
-    const now = Date.now();
-    if (now - lastCursorSend < 40) return;
-    lastCursorSend = now;
-    ws.send(JSON.stringify({ type: 'cursor', x: pt.x, y: pt.y }));
-  }
-
-  canvas.addEventListener('mousedown', startDraw);
-  canvas.addEventListener('mousemove', moveDraw);
-  canvas.addEventListener('mouseup', endDraw);
-  canvas.addEventListener('mouseleave', endDraw);
-  canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
-  canvas.addEventListener('touchmove', moveDraw, { passive: false });
-  canvas.addEventListener('touchend', endDraw);
-
-  function setColor(hex) {
-    brushColor = hex;
-    erasing = false;
-    eraserBtn.classList.remove('active');
-    document.querySelectorAll('.swatch').forEach(s =>
-      s.classList.toggle('active', s.dataset.c === hex));
-  }
-
-  PALETTE.forEach(hex => {
-    const sw = document.createElement('div');
-    sw.className = 'swatch' + (hex === brushColor ? ' active' : '');
-    sw.style.background = hex;
-    sw.dataset.c = hex;
-    sw.addEventListener('click', () => setColor(hex));
-    paletteEl.appendChild(sw);
-  });
-
-  customColor.addEventListener('input', e => setColor(e.target.value));
-  sizeSlider.addEventListener('input', e => brushSize = +e.target.value);
-
-  eraserBtn.addEventListener('click', () => {
-    erasing = !erasing;
-    eraserBtn.classList.toggle('active', erasing);
-  });
-
-  clearBtn.addEventListener('click', () => {
-    if (confirm('Smazat celou plochu pro všechny?')) {
-      ws.send(JSON.stringify({ type: 'clear_all' }));
-    }
-  });
-
-  function getOrCreateCursor(id, color, username) {
-    if (remoteUsers.has(id)) return remoteUsers.get(id);
-    const el = document.createElement('div');
-    el.className = 'remote-cursor';
-    el.innerHTML =
-      `<div class="cursor-dot" style="background:${color}"></div>` +
-      `<div class="cursor-label" style="border-left:3px solid ${color};padding-left:5px">${username}</div>`;
-    canvasArea.appendChild(el);
-    const user = { username, color, el };
-    remoteUsers.set(id, user);
-    return user;
-  }
-
-  function moveCursor(id, x, y) {
-    const u = remoteUsers.get(id);
-    if (!u) return;
-    u.el.style.left = (x * canvasArea.offsetWidth)  + 'px';
-    u.el.style.top  = (y * canvasArea.offsetHeight) + 'px';
-  }
-
-  function removeCursor(id) {
-    const u = remoteUsers.get(id);
-    if (u) { u.el.remove(); remoteUsers.delete(id); }
-  }
-
-  function rebuildUserList() {
-    usersList.innerHTML = '';
-    remoteUsers.forEach(u => {
-      const row = document.createElement('div');
-      row.className = 'user-row';
-      row.innerHTML =
-        `<div class="user-row-dot" style="background:${u.color}"></div>` +
-        `<span>${u.username}</span>`;
-      usersList.appendChild(row);
-    });
-  }
-
-  let ws;
-
-  function connect() {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${proto}://${location.host}`);
-
-    ws.addEventListener('open', () => {
-      ws.send(JSON.stringify({ type: 'join', username: myUsername }));
-    });
-
-    ws.addEventListener('message', e => {
-      const msg = JSON.parse(e.data);
-
-      if (msg.type === 'init') {
-        myId    = msg.id;
-        myColor = msg.color;
-        document.getElementById('my-dot').style.background  = myColor;
-        document.getElementById('my-name').textContent      = myUsername;
-        msg.users.forEach(u => {
-          if (u.id !== myId) getOrCreateCursor(u.id, u.color, u.username);
-        });
-        rebuildUserList();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        msg.strokes.forEach(replayStroke);
-      }
-
-      if (msg.type === 'user_join' && msg.id !== myId) {
-        getOrCreateCursor(msg.id, msg.color, msg.username);
-        rebuildUserList();
-      }
-
-      if (msg.type === 'user_leave') {
-        removeCursor(msg.id);
-        rebuildUserList();
-      }
-
-      if (msg.type === 'cursor')   moveCursor(msg.id, msg.x, msg.y);
-      if (msg.type === 'stroke')   replayStroke(msg.stroke);
-      if (msg.type === 'clear_all') ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
-
-    ws.addEventListener('close', () => setTimeout(connect, 2000));
-  }
-
-  function joinApp() {
-    const name = document.getElementById('username-input').value.trim();
-    if (!name) return;
-    myUsername = name;
-    joinScreen.style.display = 'none';
-    appEl.classList.add('visible');
-    resizeCanvas();
-    connect();
-  }
-
-  document.getElementById('join-btn').addEventListener('click', joinApp);
-  document.getElementById('username-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') joinApp();
-  });
-
-  window.addEventListener('resize', resizeCanvas);
-</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
