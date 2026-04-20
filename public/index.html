@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malování</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e0e0e0;
+      --muted: #666;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; height: 100dvh; overflow: hidden; }
+
+    /* ── Join screen ── */
+    #join-screen {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+
+    #join-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 48px;
+      display: flex; flex-direction: column; gap: 16px;
+      min-width: 300px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.6);
+    }
+
+    #join-box h1 { font-size: 1.4rem; font-weight: 600; }
+    #join-box p  { font-size: .85rem; color: var(--muted); }
+
+    #join-box input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    #join-box input:focus { border-color: #555; }
+
+    #join-btn {
+      background: var(--text);
+      color: var(--bg);
+      border: none; border-radius: 8px;
+      padding: 10px;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    #join-btn:hover { opacity: .85; }
+
+    /* ── Main layout ── */
+    #app { display: none; flex-direction: column; height: 100dvh; }
+    #app.visible { display: flex; }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
+      display: flex; align-items: center; gap: 10px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .tool-label { font-size: .75rem; color: var(--muted); }
+
+    #palette { display: flex; gap: 5px; }
+
+    .swatch {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform .1s, border-color .1s;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { border-color: #fff; transform: scale(1.2); }
+
+    #custom-color {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      padding: 0; background: none;
+      flex-shrink: 0;
+    }
+
+    .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+    #size-slider {
+      accent-color: var(--text);
+      width: 90px;
+    }
+
+    #eraser-btn, #clear-btn {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: background .1s;
+    }
+    #eraser-btn:hover, #clear-btn:hover { background: #2a2a2a; }
+    #eraser-btn.active { border-color: #888; background: #2a2a2a; }
+
+    #clear-btn { color: #e74c3c; border-color: #e74c3c44; }
+
+    /* user chip */
+    #my-chip {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 6px;
+      font-size: .8rem; color: var(--muted);
+    }
+    #my-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+
+    /* ── Canvas area ── */
+    #canvas-area {
+      flex: 1; position: relative; overflow: hidden;
+      background: #fff;
+      cursor: crosshair;
+    }
+
+    #main-canvas { position: absolute; top: 0; left: 0; }
+
+    /* ── Cursors overlay ── */
+    .remote-cursor {
+      position: absolute;
+      pointer-events: none;
+      transform: translate(-4px, -4px);
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 3px;
+    }
+    .cursor-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.6);
+    }
+    .cursor-label {
+      background: rgba(0,0,0,.65);
+      color: #fff;
+      font-size: .7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* ── Users list ── */
+    #users-panel {
+      position: absolute;
+      bottom: 12px; right: 12px;
+      background: rgba(15,15,15,.75);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: .75rem;
+      max-width: 160px;
+      backdrop-filter: blur(6px);
+    }
+    #users-panel h3 { font-size: .7rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+    .user-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+    .user-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- Join -->
+<div id="join-screen">
+  <div id="join-box">
+    <h1>Malování</h1>
+    <p>Sdílená kreslicí plocha v reálném čase.</p>
+    <input id="username-input" maxlength="24" placeholder="Tvoje jméno…" autocomplete="off" />
+    <button id="join-btn">Připojit se</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="toolbar">
+    <span class="tool-label">Barva</span>
+    <div id="palette"></div>
+    <input type="color" id="custom-color" title="Vlastní barva" />
+    <div class="sep"></div>
+    <span class="tool-label">Velikost</span>
+    <input type="range" id="size-slider" min="1" max="40" value="5" />
+    <div class="sep"></div>
+    <button id="eraser-btn">Guma</button>
+    <button id="clear-btn">Smazat vše</button>
+    <div id="my-chip">
+      <div id="my-dot"></div>
+      <span id="my-name"></span>
+    </div>
+  </div>
+
+  <div id="canvas-area">
+    <canvas id="main-canvas"></canvas>
+  </div>
+
+  <div id="users-panel">
+    <h3>Online</h3>
+    <div id="users-list"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let myId, myColor, myUsername;
+let brushColor = '#e74c3c';
+let brushSize = 5;
+let erasing = false;
+let drawing = false;
+let lastPt = null;
+let currentPoints = [];
+
+const remoteUsers = new Map(); // id → { username, color, el }
+
+const PALETTE = [
+  '#1a1a1a','#ffffff','#e74c3c','#e67e22',
+  '#f1c40f','#2ecc71','#3498db','#9b59b6',
+];
+
+// ── Elements ───────────────────────────────────────────────────
+const joinScreen = document.getElementById('join-screen');
+const appEl = document.getElementById('app');
+const canvasArea = document.getElementById('canvas-area');
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+const paletteEl = document.getElementById('palette');
+const sizeSlider = document.getElementById('size-slider');
+const eraserBtn = document.getElementById('eraser-btn');
+const clearBtn = document.getElementById('clear-btn');
+const customColor = document.getElementById('custom-color');
+const usersList = document.getElementById('users-list');
+
+// ── Canvas resize ──────────────────────────────────────────────
+function resizeCanvas() {
+  const { offsetWidth: w, offsetHeight: h } = canvasArea;
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  canvas.width = w;
+  canvas.height = h;
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── Replay strokes ─────────────────────────────────────────────
+function replayStroke(stroke) {
+  const { points, color, size } = stroke;
+  if (points.length < 2) return;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalCompositeOperation = color === '#00000000' ? 'destination-out' : 'source-over';
+  ctx.moveTo(points[0].x * canvas.width, points[0].y * canvas.height);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x * canvas.width, points[i].y * canvas.height);
+  }
+  ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// ── Drawing ────────────────────────────────────────────────────
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - r.left) / canvas.width,
+    y: (src.clientY - r.top) / canvas.height,
+  };
+}
+
+function startDraw(e) {
+  drawing = true;
+  lastPt = getPos(e);
+  currentPoints = [lastPt];
+}
+
+function moveDraw(e) {
+  e.preventDefault();
+  const pt = getPos(e);
+
+  // Show own cursor movement to others
+  throttledCursorSend(pt);
+
+  if (!drawing) return;
+  currentPoints.push(pt);
+
+  // Draw locally
+  ctx.beginPath();
+  ctx.strokeStyle = erasing ? '#ffffff' : brushColor;
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (lastPt) ctx.moveTo(lastPt.x * canvas.width, lastPt.y * canvas.height);
+  ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
+  ctx.stroke();
+  lastPt = pt;
+}
+
+function endDraw() {
+  if (!drawing) return;
+  drawing = false;
+  if (currentPoints.length >= 2) {
+    ws.send(JSON.stringify({
+      type: 'stroke',
+      color: erasing ? '#ffffff' : brushColor,
+      size: brushSize,
+      points: currentPoints,
+    }));
+  }
+  currentPoints = [];
+  lastPt = null;
+}
+
+// ── Throttled cursor broadcast ─────────────────────────────────
+let lastCursorSend = 0;
+function throttledCursorSend(pt) {
+  const now = Date.now();
+  if (now - lastCursorSend < 40) return;
+  lastCursorSend = now;
+  ws.send(JSON.stringify({ type: 'cursor', x: pt.x, y: pt.y }));
+}
+
+// ── Canvas events ──────────────────────────────────────────────
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', moveDraw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
+canvas.addEventListener('touchmove', moveDraw, { passive: false });
+canvas.addEventListener('touchend', endDraw);
+
+// ── Palette ────────────────────────────────────────────────────
+function setColor(hex) {
+  brushColor = hex;
+  erasing = false;
+  eraserBtn.classList.remove('active');
+  document.querySelectorAll('.swatch').forEach(s =>
+    s.classList.toggle('active', s.dataset.c === hex));
+}
+
+PALETTE.forEach(hex => {
+  const sw = document.createElement('div');
+  sw.className = 'swatch' + (hex === brushColor ? ' active' : '');
+  sw.style.background = hex;
+  sw.dataset.c = hex;
+  sw.addEventListener('click', () => setColor(hex));
+  paletteEl.appendChild(sw);
+});
+
+customColor.addEventListener('input', e => setColor(e.target.value));
+sizeSlider.addEventListener('input', e => brushSize = +e.target.value);
+eraserBtn.addEventListener('click', () => {
+  erasing = !erasing;
+  eraserBtn.classList.toggle('active', erasing);
+});
+clearBtn.addEventListener('click', () => {
+  if (confirm('Smazat celou plochu pro všechny?')) {
+    ws.send(JSON.stringify({ type: 'clear_all' }));
+  }
+});
+
+// ── Remote cursors ─────────────────────────────────────────────
+function getOrCreateCursor(id, color, username) {
+  if (remoteUsers.has(id)) return remoteUsers.get(id);
+  const el = document.createElement('div');
+  el.className = 'remote-cursor';
+  el.innerHTML = `<div class="cursor-dot" style="background:${color}"></div><div class="cursor-label" style="border-left:3px solid ${color}">${username}</div>`;
+  canvasArea.appendChild(el);
+  const user = { username, color, el };
+  remoteUsers.set(id, user);
+  return user;
+}
+
+function moveCursor(id, x, y) {
+  const u = remoteUsers.get(id);
+  if (!u) return;
+  u.el.style.left = (x * canvasArea.offsetWidth) + 'px';
+  u.el.style.top  = (y * canvasArea.offsetHeight) + 'px';
+}
+
+function removeCursor(id) {
+  const u = remoteUsers.get(id);
+  if (u) { u.el.remove(); remoteUsers.delete(id); }
+}
+
+// ── Users panel ────────────────────────────────────────────────
+function rebuildUserList() {
+  usersList.innerHTML = '';
+  remoteUsers.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'user-row';
+    row.innerHTML = `<div class="user-row-dot" style="background:${u.color}"></div><span>${u.username}</span>`;
+    usersList.appendChild(row);
+  });
+}
+
+// ── WebSocket ──────────────────────────────────────────────────
+let ws;
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({ type: 'join', username: myUsername }));
+  });
+
+  ws.addEventListener('message', e => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.type === 'init') {
+      myId = msg.id;
+      myColor = msg.color;
+      document.getElementById('my-dot').style.background = myColor;
+      document.getElementById('my-name').textContent = myUsername;
+
+      // Restore existing users
+      msg.users.forEach(u => {
+        if (u.id !== myId) {
+          getOrCreateCursor(u.id, u.color, u.username);
+        }
+      });
+      rebuildUserList();
+
+      // Replay canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      msg.strokes.forEach(replayStroke);
+    }
+
+    if (msg.type === 'user_join') {
+      if (msg.id !== myId) {
+        getOrCreateCursor(msg.id, msg.color, msg.username);
+        rebuildUserList();
+      }
+    }
+
+    if (msg.type === 'user_leave') {
+      removeCursor(msg.id);
+      rebuildUserList();
+    }
+
+    if (msg.type === 'cursor') {
+      if (msg.id !== myId) moveCursor(msg.id, msg.x, msg.y);
+    }
+
+    if (msg.type === 'stroke') {
+      replayStroke(msg.stroke);
+    }
+
+    if (msg.type === 'clear_all') {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  });
+
+  ws.addEventListener('close', () => setTimeout(connect, 2000));
+}
+
+// ── Join form ──────────────────────────────────────────────────
+function joinApp() {
+  const name = document.getElementById('username-input').value.trim();
+  if (!name) return;
+  myUsername = name;
+  joinScreen.style.display = 'none';
+  appEl.classList.add('visible');
+  resizeCanvas();
+  connect();
+}
+
+document.getElementById('join-btn').addEventListener('click', joinApp);
+document.getElementById('username-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinApp();
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  // Re-request full state on resize by re-replaying would lose data,
+  // so just resize — canvas content is preserved via getImageData in resizeCanvas
+});
+</script>
+</body>
+</html>
