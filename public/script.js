@@ -10,11 +10,14 @@ const zoomLevelDisplay = document.getElementById('zoomLevel');
 
 const socket = io();
 
-// Zoom state
+// Canvas state
+let drawingHistory = [];
 let zoomLevel = 1;
 const minZoom = 0.5;
 const maxZoom = 3;
 const zoomStep = 0.2;
+let panX = 0;
+let panY = 0;
 
 // Initialize canvas size
 function resizeCanvas() {
@@ -29,30 +32,43 @@ let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
 
-// Set initial brush properties
-ctx.lineJoin = 'round';
-ctx.lineCap = 'round';
-ctx.lineWidth = brushSize.value;
-ctx.strokeStyle = colorPicker.value;
+// Redraw canvas based on zoom and pan
+function redrawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(panX, panY);
+  ctx.scale(zoomLevel, zoomLevel);
+  
+  for (const stroke of drawingHistory) {
+    drawStroke(stroke);
+  }
+  
+  ctx.restore();
+}
+
+// Draw a single stroke (circle)
+function drawStroke(stroke) {
+  ctx.fillStyle = stroke.color;
+  ctx.beginPath();
+  ctx.arc(stroke.x, stroke.y, stroke.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+}
 
 // Update brush size display
 brushSize.addEventListener('input', () => {
   brushSizeValue.textContent = brushSize.value;
-  ctx.lineWidth = brushSize.value;
 });
 
 // Update brush properties when changed
 colorPicker.addEventListener('change', () => {
-  ctx.strokeStyle = colorPicker.value;
+  // No special action needed
 });
 
 // Zoom functions
 function setZoom(newZoom) {
   zoomLevel = Math.max(minZoom, Math.min(maxZoom, newZoom));
   zoomLevelDisplay.textContent = Math.round(zoomLevel * 100) + '%';
-  
-  // Apply zoom transformation
-  ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
+  redrawCanvas();
 }
 
 zoomInBtn.addEventListener('click', () => {
@@ -67,13 +83,32 @@ zoomOutBtn.addEventListener('click', () => {
 function draw(e) {
   if (!isDrawing) return;
 
-  const x = e.offsetX / zoomLevel;
-  const y = e.offsetY / zoomLevel;
+  // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+  const x = (e.offsetX - panX) / zoomLevel;
+  const y = (e.offsetY - panY) / zoomLevel;
 
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
+  // Interpolate points between last position and current position
+  const dx = x - lastX;
+  const dy = y - lastY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.ceil(distance) + 1;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = steps > 0 ? i / steps : 0;
+    const interpX = lastX + dx * t;
+    const interpY = lastY + dy * t;
+
+    const stroke = {
+      x: interpX,
+      y: interpY,
+      color: colorPicker.value,
+      size: brushSize.value
+    };
+    
+    drawingHistory.push(stroke);
+  }
+
+  redrawCanvas();
 
   // Send drawing data to server
   socket.emit('draw', {
@@ -81,8 +116,8 @@ function draw(e) {
     y0: lastY,
     x1: x,
     y1: y,
-    color: ctx.strokeStyle,
-    size: ctx.lineWidth
+    color: colorPicker.value,
+    size: brushSize.value
   });
 
   lastX = x;
@@ -92,8 +127,8 @@ function draw(e) {
 // Event listeners for mouse
 canvas.addEventListener('mousedown', (e) => {
   isDrawing = true;
-  lastX = e.offsetX / zoomLevel;
-  lastY = e.offsetY / zoomLevel;
+  lastX = (e.offsetX - panX) / zoomLevel;
+  lastY = (e.offsetY - panY) / zoomLevel;
 });
 
 canvas.addEventListener('mousemove', draw);
@@ -105,8 +140,8 @@ canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
-  lastX = (touch.clientX - rect.left) / zoomLevel;
-  lastY = (touch.clientY - rect.top) / zoomLevel;
+  lastX = (touch.clientX - rect.left - panX) / zoomLevel;
+  lastY = (touch.clientY - rect.top - panY) / zoomLevel;
   isDrawing = true;
 });
 
@@ -115,10 +150,10 @@ canvas.addEventListener('touchmove', (e) => {
   if (!isDrawing) return;
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
-  const x = (touch.clientX - rect.left) / zoomLevel;
-  const y = (touch.clientY - rect.top) / zoomLevel;
+  const offsetX = touch.clientX - rect.left;
+  const offsetY = touch.clientY - rect.top;
 
-  draw({ offsetX: x * zoomLevel, offsetY: y * zoomLevel });
+  draw({ offsetX, offsetY });
 });
 
 canvas.addEventListener('touchend', () => {
@@ -127,24 +162,39 @@ canvas.addEventListener('touchend', () => {
 
 // Clear canvas
 clearBtn.addEventListener('click', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawingHistory = [];
+  redrawCanvas();
   socket.emit('clear');
 });
 
 // Listen for drawing events from other users
 socket.on('draw', (data) => {
-  ctx.strokeStyle = data.color;
-  ctx.lineWidth = data.size;
-  ctx.beginPath();
-  ctx.moveTo(data.x0, data.y0);
-  ctx.lineTo(data.x1, data.y1);
-  ctx.stroke();
-  // Reset to current user's settings
-  ctx.strokeStyle = colorPicker.value;
-  ctx.lineWidth = brushSize.value;
+  // Interpolate points between start and end
+  const dx = data.x1 - data.x0;
+  const dy = data.y1 - data.y0;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.ceil(distance) + 1;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = steps > 0 ? i / steps : 0;
+    const interpX = data.x0 + dx * t;
+    const interpY = data.y0 + dy * t;
+
+    const stroke = {
+      x: interpX,
+      y: interpY,
+      color: data.color,
+      size: data.size
+    };
+    
+    drawingHistory.push(stroke);
+  }
+
+  redrawCanvas();
 });
 
 // Listen for clear events from other users
 socket.on('clear', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawingHistory = [];
+  redrawCanvas();
 });
