@@ -25,6 +25,84 @@
       border: 2px outset #c0c0c0;
     }
 
+    .hidden {
+      display: none !important;
+    }
+
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .login-card {
+      width: min(90vw, 420px);
+      background: #f0f0f0;
+      border: 2px outset #c0c0c0;
+      padding: 20px;
+      box-shadow: 0 0 0 4px rgba(0,0,0,0.1);
+    }
+
+    .login-card h1 {
+      font-size: 18px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .login-card label {
+      font-size: 12px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .login-card input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      border: 1px solid #888;
+      background: white;
+    }
+
+    .user-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .user-select-btn {
+      padding: 10px 8px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 2px outset #c0c0c0;
+      background: #d0d0d0;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .user-select-btn.selected {
+      background: #1084d0;
+      color: #fff;
+      border-color: #000080;
+    }
+
+    .login-card button {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px outset #c0c0c0;
+      background: #c0c0c0;
+    }
+
+    .login-card button:hover {
+      background: #d0d0d0;
+    }
+
     .title-bar {
       background: linear-gradient(to right, #000080, #1084d0);
       color: white;
@@ -286,7 +364,22 @@
   </style>
 </head>
 <body>
-  <div class="window">
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <h1>Vítejte v malování</h1>
+      <label for="usernameInput">Zadejte své uživatelské jméno</label>
+      <input id="usernameInput" type="text" placeholder="Např. Karel" autocomplete="off">
+      <label>Vyberte si profil</label>
+      <div class="user-buttons">
+        <button type="button" class="user-select-btn" data-member="Osoba A">Osoba A</button>
+        <button type="button" class="user-select-btn" data-member="Osoba B">Osoba B</button>
+        <button type="button" class="user-select-btn" data-member="Osoba C">Osoba C</button>
+      </div>
+      <button id="startBtn" type="button">Spustit malování</button>
+    </div>
+  </div>
+
+  <div class="window hidden" id="appWindow">
     <div class="title-bar">
       <div class="title">Sdílené Malování</div>
       <div class="controls">
@@ -374,7 +467,7 @@
     </div>
 
     <div class="status-bar">
-      Pro kreslení použijte myš nebo dotyk. Připojeno uživatelů: <span id="userCount">1</span>
+      Pro kreslení použijte myš nebo dotyk. Připojeno uživatelů: <span id="userCount">1</span> | Přihlášen jako: <span id="currentUserInfo">žádný</span>
     </div>
   </div>
 
