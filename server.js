@@ -117,7 +117,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'chat') {
       const text = String(msg.text || '').trim().slice(0, 300);
       if (!text) return;
-      broadcast({ type: 'chat', username: user.username, color: user.color, text });
+      broadcast({ type: 'chat', username: user.username, color: user.color, text }, ws);
     }
 
     if (msg.type === 'clear_all') {
