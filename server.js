@@ -11,9 +11,18 @@ const PORT = process.env.PORT || 3000;
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
+let userCount = 0;
+
 // Handle socket connections
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  userCount++;
+  console.log('A user connected:', socket.id, 'Total users:', userCount);
+
+  // Send current user count to the new user
+  socket.emit('userCount', userCount);
+
+  // Broadcast updated user count to all users
+  io.emit('userCount', userCount);
 
   // Listen for drawing events from clients
   socket.on('draw', (data) => {
@@ -28,7 +37,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+    userCount--;
+    console.log('User disconnected:', socket.id, 'Total users:', userCount);
+    // Broadcast updated user count to remaining users
+    io.emit('userCount', userCount);
   });
 });
 
