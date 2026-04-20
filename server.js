@@ -16,41 +16,33 @@ const USER_COLORS = [
 ];
 
 let colorIndex = 0;
-const users = new Map(); // ws → { id, username, color }
-const strokes = [];     // persistent canvas history
-
+const users   = new Map();
+const history = []; // { type: 'stroke'|'shape'|'fill', ...data }
 let nextId = 1;
 
 function broadcast(data, exclude = null) {
   const msg = JSON.stringify(data);
-  wss.clients.forEach(client => {
-    if (client !== exclude && client.readyState === WebSocket.OPEN) {
-      client.send(msg);
-    }
+  wss.clients.forEach(c => {
+    if (c !== exclude && c.readyState === WebSocket.OPEN) c.send(msg);
   });
 }
 
+function validColor(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c); }
+
 wss.on('connection', (ws) => {
   const id = nextId++;
-  const color = USER_COLORS[colorIndex % USER_COLORS.length];
-  colorIndex++;
-
+  const color = USER_COLORS[colorIndex++ % USER_COLORS.length];
   users.set(ws, { id, username: null, color });
 
   ws.send(JSON.stringify({
-    type: 'init',
-    id,
-    color,
-    strokes,
-    users: [...users.values()]
-      .filter(u => u.username)
+    type: 'init', id, color, history,
+    users: [...users.values()].filter(u => u.username)
       .map(u => ({ id: u.id, username: u.username, color: u.color })),
   }));
 
   ws.on('message', (raw) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
-
     const user = users.get(ws);
     if (!user) return;
 
@@ -59,12 +51,13 @@ wss.on('connection', (ws) => {
       if (!username) return;
       user.username = username;
       broadcast({ type: 'user_join', id: user.id, username, color: user.color }, ws);
+      return;
     }
 
     if (!user.username) return;
 
     if (msg.type === 'cursor') {
-      const x = Number(msg.x); const y = Number(msg.y);
+      const x = +msg.x, y = +msg.y;
       if (!isFinite(x) || !isFinite(y)) return;
       broadcast({ type: 'cursor', id: user.id, x, y }, ws);
     }
@@ -72,16 +65,33 @@ wss.on('connection', (ws) => {
     if (msg.type === 'stroke') {
       const pts = msg.points;
       if (!Array.isArray(pts) || pts.length < 2) return;
-      const color = /^#[0-9a-fA-F]{6}$/.test(msg.color) ? msg.color : user.color;
-      const size = Math.max(1, Math.min(40, Number(msg.size) || 4));
-      const stroke = { color, size, points: pts.map(p => ({ x: +p.x, y: +p.y })) };
-      strokes.push(stroke);
-      if (strokes.length > 10000) strokes.splice(0, strokes.length - 10000);
-      broadcast({ type: 'stroke', stroke }, ws);
+      const color = validColor(msg.color) ? msg.color : user.color;
+      const size  = Math.max(1, Math.min(60, +msg.size || 4));
+      const op = { type: 'stroke', color, size, points: pts.map(p => ({ x: +p.x, y: +p.y })) };
+      pushHistory(op);
+      broadcast({ type: 'op', op }, ws);
+    }
+
+    if (msg.type === 'shape') {
+      const { kind } = msg;
+      if (!['line','rect','rect-fill','ellipse','ellipse-fill'].includes(kind)) return;
+      const color = validColor(msg.color) ? msg.color : user.color;
+      const size  = Math.max(1, Math.min(60, +msg.size || 4));
+      const op = { type: 'shape', kind, color, size,
+        x1: +msg.x1, y1: +msg.y1, x2: +msg.x2, y2: +msg.y2 };
+      pushHistory(op);
+      broadcast({ type: 'op', op }, ws);
+    }
+
+    if (msg.type === 'fill') {
+      const color = validColor(msg.color) ? msg.color : user.color;
+      const op = { type: 'fill', color, x: +msg.x, y: +msg.y };
+      pushHistory(op);
+      broadcast({ type: 'op', op }, ws);
     }
 
     if (msg.type === 'clear_all') {
-      strokes.length = 0;
+      history.length = 0;
       broadcast({ type: 'clear_all' });
     }
   });
@@ -92,6 +102,11 @@ wss.on('connection', (ws) => {
     users.delete(ws);
   });
 });
+
+function pushHistory(op) {
+  history.push(op);
+  if (history.length > 20000) history.splice(0, history.length - 20000);
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`http://localhost:${PORT}`));

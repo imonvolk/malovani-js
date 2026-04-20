@@ -6,170 +6,144 @@
   <title>Malování</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0f0f0f;
-      --surface: #1a1a1a;
-      --border: #2a2a2a;
-      --text: #e0e0e0;
-      --muted: #666;
+      --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
+      --border: #2e2e2e; --text: #e0e0e0; --muted: #555;
+      --accent: #3a8ef6;
     }
-
     body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; height: 100vh; overflow: hidden; }
 
-    /* Join screen */
+    /* ── Join ── */
     #join-screen {
-      position: fixed; inset: 0; z-index: 100;
+      position: fixed; inset: 0; z-index: 200;
       display: flex; align-items: center; justify-content: center;
       background: var(--bg);
     }
-
     #join-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 40px 48px;
-      display: flex; flex-direction: column; gap: 16px;
-      min-width: 300px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.6);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 44px 52px;
+      display: flex; flex-direction: column; gap: 14px; min-width: 300px;
+      box-shadow: 0 12px 48px rgba(0,0,0,.7);
     }
-
-    #join-box h1 { font-size: 1.4rem; font-weight: 600; }
+    #join-box h1 { font-size: 1.5rem; font-weight: 700; }
     #join-box p  { font-size: .85rem; color: var(--muted); }
-
     #join-box input {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 10px 14px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color .15s;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      padding: 10px 14px; font-size: 1rem; outline: none;
     }
-    #join-box input:focus { border-color: #555; }
-
+    #join-box input:focus { border-color: var(--accent); }
     #join-btn {
-      background: var(--text);
-      color: var(--bg);
-      border: none; border-radius: 8px;
-      padding: 10px;
-      font-size: 1rem; font-weight: 600;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; padding: 11px; font-size: 1rem; font-weight: 600;
       cursor: pointer;
-      transition: opacity .15s;
     }
-    #join-btn:hover { opacity: .85; }
+    #join-btn:hover { filter: brightness(1.15); }
 
-    /* Main layout */
-    #app { display: none; flex-direction: column; height: 100vh; }
-    #app.visible { display: flex; }
+    /* ── App layout ── */
+    #app { display: none; height: 100vh; }
+    #app.visible { display: grid; grid-template-rows: auto 1fr; }
 
-    /* Toolbar */
+    /* ── Top toolbar ── */
     #toolbar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 8px 14px;
-      display: flex; align-items: center; gap: 10px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap; flex-shrink: 0; user-select: none;
     }
+    .t-sep { width: 1px; height: 26px; background: var(--border); margin: 0 2px; }
+    .t-label { font-size: .7rem; color: var(--muted); }
 
-    .tool-label { font-size: .75rem; color: var(--muted); }
+    /* Tools */
+    #tools { display: flex; gap: 3px; }
+    .tool-btn {
+      background: none; border: 1px solid transparent;
+      border-radius: 6px; color: var(--text);
+      width: 30px; height: 30px; font-size: .95rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .1s;
+    }
+    .tool-btn:hover { background: var(--surface2); }
+    .tool-btn.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
 
-    #palette { display: flex; gap: 5px; }
-
+    /* Palette */
+    #palette { display: flex; gap: 4px; flex-wrap: wrap; }
     .swatch {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: transform .1s, border-color .1s;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid transparent; cursor: pointer;
+      transition: transform .1s;
     }
-    .swatch:hover { transform: scale(1.15); }
+    .swatch:hover { transform: scale(1.2); }
     .swatch.active { border-color: #fff; transform: scale(1.2); }
-
     #custom-color {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      cursor: pointer;
-      padding: 0; background: none;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--border); cursor: pointer; padding: 0; background: none;
     }
 
-    .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
-
-    #size-slider { accent-color: var(--text); width: 90px; }
-
-    #eraser-btn, #clear-btn {
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: .8rem;
-      cursor: pointer;
+    /* Size */
+    #size-slider { accent-color: var(--accent); width: 80px; }
+    #size-preview {
+      background: var(--text); border-radius: 50%;
+      flex-shrink: 0; transition: width .1s, height .1s;
     }
-    #eraser-btn:hover, #clear-btn:hover { background: #2a2a2a; }
-    #eraser-btn.active { border-color: #888; background: #2a2a2a; }
-    #clear-btn { color: #e74c3c; border-color: #e74c3c44; }
 
-    #my-chip {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
-      font-size: .8rem; color: var(--muted);
+    /* Opacity */
+    #opacity-slider { accent-color: var(--accent); width: 70px; }
+
+    /* My chip */
+    #my-chip { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); }
+    #my-dot  { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* Undo/Clear */
+    .action-btn {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 10px; font-size: .78rem; cursor: pointer;
     }
-    #my-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .action-btn:hover { background: #2e2e2e; }
+    #clear-btn { color: #e74c3c; border-color: #e74c3c55; }
 
-    /* Canvas area */
+    /* ── Canvas area ── */
     #canvas-area {
-      flex: 1; position: relative; overflow: hidden;
-      background: #fff;
-      cursor: crosshair;
+      position: relative; overflow: hidden;
+      background: #fff; cursor: crosshair;
     }
+    #main-canvas, #preview-canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    }
+    #preview-canvas { pointer-events: none; }
 
-    #main-canvas { position: absolute; top: 0; left: 0; }
-
-    /* Remote cursors */
+    /* ── Remote cursors ── */
     .remote-cursor {
-      position: absolute;
-      pointer-events: none;
+      position: absolute; pointer-events: none;
       transform: translate(-4px, -4px);
-      display: flex; flex-direction: column; align-items: flex-start;
-      gap: 3px;
+      display: flex; flex-direction: column; gap: 3px;
     }
-    .cursor-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.6);
-    }
+    .cursor-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); }
     .cursor-label {
-      background: rgba(0,0,0,.65);
-      color: #fff;
-      font-size: .7rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      white-space: nowrap;
+      background: rgba(0,0,0,.7); color: #fff;
+      font-size: .68rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap;
     }
 
-    /* Users panel */
+    /* ── Users panel ── */
     #users-panel {
-      position: absolute;
-      bottom: 12px; right: 12px;
-      background: rgba(15,15,15,.75);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: .75rem;
-      max-width: 160px;
-      backdrop-filter: blur(6px);
+      position: absolute; bottom: 12px; right: 12px;
+      background: rgba(15,15,15,.8); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; font-size: .75rem;
+      backdrop-filter: blur(8px); z-index: 10;
     }
-    #users-panel h3 { font-size: .7rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+    #users-panel h3 { font-size: .68rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
     .user-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
     .user-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Cursor overrides per tool */
+    body[data-tool="fill"]      #canvas-area { cursor: cell; }
+    body[data-tool="picker"]    #canvas-area { cursor: crosshair; }
+    body[data-tool="eraser"]    #canvas-area { cursor: cell; }
   </style>
 </head>
-<body>
+<body data-tool="pen">
 
+<!-- Join -->
 <div id="join-screen">
   <div id="join-box">
     <h1>Malování</h1>
@@ -179,17 +153,47 @@
   </div>
 </div>
 
+<!-- App -->
 <div id="app">
   <div id="toolbar">
-    <span class="tool-label">Barva</span>
+
+    <!-- Tools -->
+    <div id="tools">
+      <button class="tool-btn active" data-tool="pen"         title="Pero (P)">✏️</button>
+      <button class="tool-btn"        data-tool="eraser"      title="Guma (E)">⬜</button>
+      <button class="tool-btn"        data-tool="line"        title="Čára (L)">/</button>
+      <button class="tool-btn"        data-tool="rect"        title="Obdélník (R)">▭</button>
+      <button class="tool-btn"        data-tool="rect-fill"   title="Vyplněný obdélník (F)">▬</button>
+      <button class="tool-btn"        data-tool="ellipse"     title="Elipsa (O)">◯</button>
+      <button class="tool-btn"        data-tool="ellipse-fill" title="Vyplněná elipsa">⬤</button>
+      <button class="tool-btn"        data-tool="fill"        title="Výplň / kbelík (B)">🪣</button>
+      <button class="tool-btn"        data-tool="picker"      title="Kapátko (K)">🔍</button>
+    </div>
+
+    <div class="t-sep"></div>
+
+    <!-- Palette -->
     <div id="palette"></div>
     <input type="color" id="custom-color" title="Vlastní barva" />
-    <div class="sep"></div>
-    <span class="tool-label">Velikost</span>
-    <input type="range" id="size-slider" min="1" max="40" value="5" />
-    <div class="sep"></div>
-    <button id="eraser-btn">Guma</button>
-    <button id="clear-btn">Smazat vše</button>
+
+    <div class="t-sep"></div>
+
+    <!-- Size -->
+    <span class="t-label">Vel.</span>
+    <input type="range" id="size-slider" min="1" max="60" value="5" />
+    <div id="size-preview" style="width:10px;height:10px"></div>
+
+    <div class="t-sep"></div>
+
+    <!-- Opacity -->
+    <span class="t-label">Kryt.</span>
+    <input type="range" id="opacity-slider" min="5" max="100" value="100" />
+
+    <div class="t-sep"></div>
+
+    <button class="action-btn" id="undo-btn" title="Zpět (Ctrl+Z)">↩ Zpět</button>
+    <button class="action-btn" id="clear-btn">✕ Smazat vše</button>
+
     <div id="my-chip">
       <div id="my-dot"></div>
       <span id="my-name"></span>
@@ -198,6 +202,7 @@
 
   <div id="canvas-area">
     <canvas id="main-canvas"></canvas>
+    <canvas id="preview-canvas"></canvas>
   </div>
 
   <div id="users-panel">
@@ -207,252 +212,460 @@
 </div>
 
 <script>
-  let myId, myColor, myUsername;
-  let brushColor = '#e74c3c';
-  let brushSize = 5;
-  let erasing = false;
-  let drawing = false;
-  let lastPt = null;
-  let currentPoints = [];
+// ── State ──────────────────────────────────────────────────────────────────
+let myId, myColor, myUsername;
+let activeTool = 'pen';
+let brushColor = '#e74c3c';
+let brushSize  = 5;
+let opacity    = 1;
 
-  const remoteUsers = new Map();
+let drawing   = false;
+let shapeStart = null;
+let lastPt    = null;
+let currentPoints = [];
 
-  const PALETTE = [
-    '#1a1a1a','#ffffff','#e74c3c','#e67e22',
-    '#f1c40f','#2ecc71','#3498db','#9b59b6',
-  ];
+// Local undo stack (op indices we sent)
+const localHistory = [];
 
-  const joinScreen  = document.getElementById('join-screen');
-  const appEl       = document.getElementById('app');
-  const canvasArea  = document.getElementById('canvas-area');
-  const canvas      = document.getElementById('main-canvas');
-  const ctx         = canvas.getContext('2d');
-  const paletteEl   = document.getElementById('palette');
-  const sizeSlider  = document.getElementById('size-slider');
-  const eraserBtn   = document.getElementById('eraser-btn');
-  const clearBtn    = document.getElementById('clear-btn');
-  const customColor = document.getElementById('custom-color');
-  const usersList   = document.getElementById('users-list');
+const remoteUsers = new Map();
 
-  function resizeCanvas() {
-    const w = canvasArea.offsetWidth;
-    const h = canvasArea.offsetHeight;
-    if (!w || !h) return;
-    const tmp = document.createElement('canvas');
-    tmp.width = canvas.width;
-    tmp.height = canvas.height;
-    tmp.getContext('2d').drawImage(canvas, 0, 0);
-    canvas.width = w;
-    canvas.height = h;
-    ctx.drawImage(tmp, 0, 0);
+const PALETTE = [
+  '#1a1a1a','#ffffff','#e74c3c','#e67e22',
+  '#f1c40f','#2ecc71','#3498db','#9b59b6',
+  '#00bcd4','#ff5722','#795548','#607d8b',
+];
+
+// ── Elements ───────────────────────────────────────────────────────────────
+const joinScreen    = document.getElementById('join-screen');
+const appEl         = document.getElementById('app');
+const canvasArea    = document.getElementById('canvas-area');
+const canvas        = document.getElementById('main-canvas');
+const preview       = document.getElementById('preview-canvas');
+const ctx           = canvas.getContext('2d');
+const pCtx          = preview.getContext('2d');
+const paletteEl     = document.getElementById('palette');
+const sizeSlider    = document.getElementById('size-slider');
+const opacitySlider = document.getElementById('opacity-slider');
+const sizePreview   = document.getElementById('size-preview');
+const customColor   = document.getElementById('custom-color');
+const usersList     = document.getElementById('users-list');
+
+// ── Canvas resize ──────────────────────────────────────────────────────────
+function resizeCanvas() {
+  const w = canvasArea.offsetWidth;
+  const h = canvasArea.offsetHeight;
+  if (!w || !h) return;
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width || w;
+  tmp.height = canvas.height || h;
+  tmp.getContext('2d').drawImage(canvas, 0, 0);
+  canvas.width  = w; canvas.height  = h;
+  preview.width = w; preview.height = h;
+  ctx.drawImage(tmp, 0, 0);
+}
+
+// ── Replay operations ──────────────────────────────────────────────────────
+function applyOp(op, targetCtx) {
+  const c = targetCtx || ctx;
+  const W = canvas.width, H = canvas.height;
+  c.save();
+  c.globalAlpha = op.alpha ?? 1;
+
+  if (op.type === 'stroke') {
+    const { points, color, size } = op;
+    if (points.length < 2) { c.restore(); return; }
+    c.beginPath();
+    c.strokeStyle = color;
+    c.lineWidth   = size;
+    c.lineCap     = 'round';
+    c.lineJoin    = 'round';
+    c.moveTo(points[0].x * W, points[0].y * H);
+    for (let i = 1; i < points.length; i++)
+      c.lineTo(points[i].x * W, points[i].y * H);
+    c.stroke();
   }
 
-  function replayStroke(stroke) {
-    const { points, color, size } = stroke;
-    if (points.length < 2) return;
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.moveTo(points[0].x * canvas.width, points[0].y * canvas.height);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x * canvas.width, points[i].y * canvas.height);
+  if (op.type === 'shape') {
+    const x1 = op.x1 * W, y1 = op.y1 * H;
+    const x2 = op.x2 * W, y2 = op.y2 * H;
+    c.strokeStyle = op.color;
+    c.fillStyle   = op.color;
+    c.lineWidth   = op.size;
+    c.lineCap     = 'round';
+    c.lineJoin    = 'round';
+    if (op.kind === 'line') {
+      c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    } else if (op.kind === 'rect') {
+      c.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    } else if (op.kind === 'rect-fill') {
+      c.fillRect(x1, y1, x2 - x1, y2 - y1);
+    } else if (op.kind === 'ellipse') {
+      c.beginPath();
+      c.ellipse((x1+x2)/2,(y1+y2)/2,Math.abs(x2-x1)/2,Math.abs(y2-y1)/2,0,0,Math.PI*2);
+      c.stroke();
+    } else if (op.kind === 'ellipse-fill') {
+      c.beginPath();
+      c.ellipse((x1+x2)/2,(y1+y2)/2,Math.abs(x2-x1)/2,Math.abs(y2-y1)/2,0,0,Math.PI*2);
+      c.fill();
     }
-    ctx.stroke();
   }
 
-  function getPos(e) {
-    const r = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return {
-      x: (src.clientX - r.left) / canvas.width,
-      y: (src.clientY - r.top)  / canvas.height,
-    };
+  if (op.type === 'fill') {
+    floodFill(c === ctx ? ctx : c, Math.round(op.x * W), Math.round(op.y * H), op.color);
   }
 
-  function startDraw(e) {
-    drawing = true;
-    lastPt = getPos(e);
-    currentPoints = [lastPt];
+  c.restore();
+}
+
+// ── Flood fill (BFS) ───────────────────────────────────────────────────────
+function floodFill(targetCtx, sx, sy, fillHex) {
+  const W = canvas.width, H = canvas.height;
+  if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+  const imageData = targetCtx.getImageData(0, 0, W, H);
+  const d = imageData.data;
+
+  const fr = parseInt(fillHex.slice(1,3),16);
+  const fg = parseInt(fillHex.slice(3,5),16);
+  const fb = parseInt(fillHex.slice(5,7),16);
+
+  const idx0 = (sy * W + sx) * 4;
+  const sr = d[idx0], sg = d[idx0+1], sb = d[idx0+2], sa = d[idx0+3];
+
+  if (sr===fr && sg===fg && sb===fb && sa===255) return;
+
+  const stack = [sy * W + sx];
+  const visited = new Uint8Array(W * H);
+
+  while (stack.length) {
+    const pos = stack.pop();
+    if (visited[pos]) continue;
+    const px = pos % W, py = (pos / W) | 0;
+    const i = pos * 4;
+    if (d[i] !== sr || d[i+1] !== sg || d[i+2] !== sb || d[i+3] !== sa) continue;
+    visited[pos] = 1;
+    d[i] = fr; d[i+1] = fg; d[i+2] = fb; d[i+3] = 255;
+    if (px > 0)     stack.push(pos - 1);
+    if (px < W - 1) stack.push(pos + 1);
+    if (py > 0)     stack.push(pos - W);
+    if (py < H - 1) stack.push(pos + W);
+  }
+  targetCtx.putImageData(imageData, 0, 0);
+}
+
+// ── Tool palette ───────────────────────────────────────────────────────────
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTool = btn.dataset.tool;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.body.dataset.tool = activeTool;
+  });
+});
+
+function setColor(hex) {
+  brushColor = hex;
+  document.querySelectorAll('.swatch').forEach(s =>
+    s.classList.toggle('active', s.dataset.c === hex));
+  customColor.value = hex;
+}
+
+PALETTE.forEach(hex => {
+  const sw = document.createElement('div');
+  sw.className = 'swatch' + (hex === brushColor ? ' active' : '');
+  sw.style.background = hex;
+  sw.dataset.c = hex;
+  sw.addEventListener('click', () => setColor(hex));
+  paletteEl.appendChild(sw);
+});
+
+customColor.addEventListener('input', e => setColor(e.target.value));
+
+sizeSlider.addEventListener('input', e => {
+  brushSize = +e.target.value;
+  const sz = Math.max(4, Math.min(24, brushSize));
+  sizePreview.style.width  = sz + 'px';
+  sizePreview.style.height = sz + 'px';
+});
+
+opacitySlider.addEventListener('input', e => { opacity = +e.target.value / 100; });
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  if (confirm('Smazat celou plochu pro všechny?'))
+    ws.send(JSON.stringify({ type: 'clear_all' }));
+});
+
+document.getElementById('undo-btn').addEventListener('click', localUndo);
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); localUndo(); }
+  const map = { p:'pen', e:'eraser', l:'line', r:'rect', b:'fill', k:'picker', o:'ellipse' };
+  if (!e.ctrlKey && !e.metaKey && map[e.key]) {
+    const btn = document.querySelector(`.tool-btn[data-tool="${map[e.key]}"]`);
+    if (btn) btn.click();
+  }
+});
+
+// ── Local undo ─────────────────────────────────────────────────────────────
+// We store a list of ops we applied and re-render canvas from scratch when undoing
+const allOps = []; // everything applied to canvas (including remote)
+const myOpIndices = []; // indices in allOps that belong to us
+
+function localUndo() {
+  if (!myOpIndices.length) return;
+  const idx = myOpIndices.pop();
+  allOps.splice(idx, 1);
+  // Update subsequent indices
+  for (let i = 0; i < myOpIndices.length; i++) {
+    if (myOpIndices[i] > idx) myOpIndices[i]--;
+  }
+  reRender();
+}
+
+function reRender() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  allOps.forEach(op => applyOp(op));
+}
+
+function recordOp(op, isMine) {
+  allOps.push(op);
+  if (isMine) myOpIndices.push(allOps.length - 1);
+  applyOp(op);
+}
+
+// ── Drawing events ─────────────────────────────────────────────────────────
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - r.left) / canvas.width,
+    y: (src.clientY - r.top)  / canvas.height,
+  };
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const pt = getPos(e);
+
+  if (activeTool === 'picker') {
+    pickColor(pt);
+    return;
   }
 
-  function moveDraw(e) {
-    e.preventDefault();
-    const pt = getPos(e);
-    throttledCursorSend(pt);
-    if (!drawing) return;
+  drawing    = true;
+  shapeStart = pt;
+  lastPt     = pt;
+  currentPoints = [pt];
+});
+
+canvas.addEventListener('mousemove', e => {
+  const pt = getPos(e);
+  throttledCursorSend(pt);
+
+  if (!drawing) return;
+
+  if (activeTool === 'pen' || activeTool === 'eraser') {
     currentPoints.push(pt);
+    ctx.save();
+    ctx.globalAlpha   = opacity;
+    ctx.strokeStyle   = activeTool === 'eraser' ? '#ffffff' : brushColor;
+    ctx.lineWidth     = brushSize;
+    ctx.lineCap       = 'round';
+    ctx.lineJoin      = 'round';
     ctx.beginPath();
-    ctx.strokeStyle = erasing ? '#ffffff' : brushColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    if (lastPt) ctx.moveTo(lastPt.x * canvas.width, lastPt.y * canvas.height);
-    ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
+    ctx.moveTo(lastPt.x * canvas.width, lastPt.y * canvas.height);
+    ctx.lineTo(pt.x     * canvas.width, pt.y     * canvas.height);
     ctx.stroke();
+    ctx.restore();
     lastPt = pt;
+  } else if (['line','rect','rect-fill','ellipse','ellipse-fill'].includes(activeTool)) {
+    // Draw preview
+    pCtx.clearRect(0, 0, preview.width, preview.height);
+    applyOp({
+      type: 'shape', kind: activeTool,
+      color: brushColor, size: brushSize, alpha: opacity,
+      x1: shapeStart.x, y1: shapeStart.y, x2: pt.x, y2: pt.y,
+    }, pCtx);
   }
+});
 
-  function endDraw() {
-    if (!drawing) return;
-    drawing = false;
+canvas.addEventListener('mouseup', e => {
+  if (!drawing) return;
+  drawing = false;
+  pCtx.clearRect(0, 0, preview.width, preview.height);
+  const pt = getPos(e);
+
+  if (activeTool === 'pen' || activeTool === 'eraser') {
     if (currentPoints.length >= 2) {
-      ws.send(JSON.stringify({
+      const op = {
         type: 'stroke',
-        color: erasing ? '#ffffff' : brushColor,
-        size: brushSize,
+        color: activeTool === 'eraser' ? '#ffffff' : brushColor,
+        size: brushSize, alpha: opacity,
         points: currentPoints,
-      }));
+      };
+      allOps.push(op);
+      myOpIndices.push(allOps.length - 1);
+      ws.send(JSON.stringify({ type: 'stroke', ...op }));
     }
-    currentPoints = [];
-    lastPt = null;
+  } else if (activeTool === 'fill') {
+    const px = Math.round(pt.x * canvas.width);
+    const py = Math.round(pt.y * canvas.height);
+    const op = { type: 'fill', color: brushColor, x: pt.x, y: pt.y };
+    allOps.push(op);
+    myOpIndices.push(allOps.length - 1);
+    floodFill(ctx, px, py, brushColor);
+    ws.send(JSON.stringify({ type: 'fill', color: brushColor, x: pt.x, y: pt.y }));
+  } else if (['line','rect','rect-fill','ellipse','ellipse-fill'].includes(activeTool)) {
+    const op = {
+      type: 'shape', kind: activeTool,
+      color: brushColor, size: brushSize, alpha: opacity,
+      x1: shapeStart.x, y1: shapeStart.y, x2: pt.x, y2: pt.y,
+    };
+    allOps.push(op);
+    myOpIndices.push(allOps.length - 1);
+    applyOp(op);
+    ws.send(JSON.stringify({ type: 'shape', ...op }));
   }
 
-  let lastCursorSend = 0;
-  function throttledCursorSend(pt) {
-    const now = Date.now();
-    if (now - lastCursorSend < 40) return;
-    lastCursorSend = now;
-    ws.send(JSON.stringify({ type: 'cursor', x: pt.x, y: pt.y }));
-  }
+  currentPoints = []; lastPt = null; shapeStart = null;
+});
 
-  canvas.addEventListener('mousedown', startDraw);
-  canvas.addEventListener('mousemove', moveDraw);
-  canvas.addEventListener('mouseup', endDraw);
-  canvas.addEventListener('mouseleave', endDraw);
-  canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
-  canvas.addEventListener('touchmove', moveDraw, { passive: false });
-  canvas.addEventListener('touchend', endDraw);
+canvas.addEventListener('mouseleave', () => {
+  if (!drawing) return;
+  // Commit whatever is in progress
+  canvas.dispatchEvent(new MouseEvent('mouseup', { button: 0 }));
+});
 
-  function setColor(hex) {
-    brushColor = hex;
-    erasing = false;
-    eraserBtn.classList.remove('active');
-    document.querySelectorAll('.swatch').forEach(s =>
-      s.classList.toggle('active', s.dataset.c === hex));
-  }
+// Fill tool on click (mousedown + immediate mouseup)
+canvas.addEventListener('click', e => {
+  if (activeTool !== 'fill') return;
+  const pt = getPos(e);
+  const px = Math.round(pt.x * canvas.width);
+  const py = Math.round(pt.y * canvas.height);
+  if (drawing) return; // already handled in mouseup
+  const op = { type: 'fill', color: brushColor, x: pt.x, y: pt.y };
+  allOps.push(op);
+  myOpIndices.push(allOps.length - 1);
+  floodFill(ctx, px, py, brushColor);
+  ws.send(JSON.stringify({ type: 'fill', color: brushColor, x: pt.x, y: pt.y }));
+});
 
-  PALETTE.forEach(hex => {
-    const sw = document.createElement('div');
-    sw.className = 'swatch' + (hex === brushColor ? ' active' : '');
-    sw.style.background = hex;
-    sw.dataset.c = hex;
-    sw.addEventListener('click', () => setColor(hex));
-    paletteEl.appendChild(sw);
+// ── Eyedropper ─────────────────────────────────────────────────────────────
+function pickColor(pt) {
+  const px = Math.round(pt.x * canvas.width);
+  const py = Math.round(pt.y * canvas.height);
+  const d  = ctx.getImageData(px, py, 1, 1).data;
+  const hex = '#' + [d[0],d[1],d[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+  setColor(hex);
+}
+
+// ── Throttled cursor ───────────────────────────────────────────────────────
+let lastCursorSend = 0;
+function throttledCursorSend(pt) {
+  const now = Date.now();
+  if (now - lastCursorSend < 40) return;
+  lastCursorSend = now;
+  ws.send(JSON.stringify({ type: 'cursor', x: pt.x, y: pt.y }));
+}
+
+// ── Remote cursors ─────────────────────────────────────────────────────────
+function getOrCreateCursor(id, color, username) {
+  if (remoteUsers.has(id)) return remoteUsers.get(id);
+  const el = document.createElement('div');
+  el.className = 'remote-cursor';
+  el.innerHTML =
+    `<div class="cursor-dot" style="background:${color}"></div>` +
+    `<div class="cursor-label" style="border-left:3px solid ${color};padding-left:5px">${username}</div>`;
+  canvasArea.appendChild(el);
+  const user = { username, color, el };
+  remoteUsers.set(id, user);
+  return user;
+}
+function moveCursor(id, x, y) {
+  const u = remoteUsers.get(id);
+  if (!u) return;
+  u.el.style.left = (x * canvasArea.offsetWidth)  + 'px';
+  u.el.style.top  = (y * canvasArea.offsetHeight) + 'px';
+}
+function removeCursor(id) {
+  const u = remoteUsers.get(id);
+  if (u) { u.el.remove(); remoteUsers.delete(id); }
+}
+function rebuildUserList() {
+  usersList.innerHTML = '';
+  // own user first
+  const me = document.createElement('div');
+  me.className = 'user-row';
+  me.innerHTML = `<div class="user-row-dot" style="background:${myColor || '#aaa'}"></div><span>${myUsername || '…'} (já)</span>`;
+  usersList.appendChild(me);
+  remoteUsers.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'user-row';
+    row.innerHTML = `<div class="user-row-dot" style="background:${u.color}"></div><span>${u.username}</span>`;
+    usersList.appendChild(row);
+  });
+}
+
+// ── WebSocket ──────────────────────────────────────────────────────────────
+let ws;
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({ type: 'join', username: myUsername }));
   });
 
-  customColor.addEventListener('input', e => setColor(e.target.value));
-  sizeSlider.addEventListener('input', e => brushSize = +e.target.value);
+  ws.addEventListener('message', e => {
+    const msg = JSON.parse(e.data);
 
-  eraserBtn.addEventListener('click', () => {
-    erasing = !erasing;
-    eraserBtn.classList.toggle('active', erasing);
-  });
+    if (msg.type === 'init') {
+      myId    = msg.id;
+      myColor = msg.color;
+      document.getElementById('my-dot').style.background = myColor;
+      document.getElementById('my-name').textContent     = myUsername;
+      msg.users.forEach(u => { if (u.id !== myId) getOrCreateCursor(u.id, u.color, u.username); });
+      rebuildUserList();
+      // Replay history
+      allOps.length = 0; myOpIndices.length = 0;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      msg.history.forEach(op => { allOps.push(op); applyOp(op); });
+    }
 
-  clearBtn.addEventListener('click', () => {
-    if (confirm('Smazat celou plochu pro všechny?')) {
-      ws.send(JSON.stringify({ type: 'clear_all' }));
+    if (msg.type === 'user_join' && msg.id !== myId) {
+      getOrCreateCursor(msg.id, msg.color, msg.username);
+      rebuildUserList();
+    }
+    if (msg.type === 'user_leave') { removeCursor(msg.id); rebuildUserList(); }
+    if (msg.type === 'cursor')     { moveCursor(msg.id, msg.x, msg.y); }
+
+    if (msg.type === 'op') {
+      allOps.push(msg.op);
+      applyOp(msg.op);
+    }
+
+    if (msg.type === 'clear_all') {
+      allOps.length = 0; myOpIndices.length = 0;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   });
 
-  function getOrCreateCursor(id, color, username) {
-    if (remoteUsers.has(id)) return remoteUsers.get(id);
-    const el = document.createElement('div');
-    el.className = 'remote-cursor';
-    el.innerHTML =
-      `<div class="cursor-dot" style="background:${color}"></div>` +
-      `<div class="cursor-label" style="border-left:3px solid ${color};padding-left:5px">${username}</div>`;
-    canvasArea.appendChild(el);
-    const user = { username, color, el };
-    remoteUsers.set(id, user);
-    return user;
-  }
+  ws.addEventListener('close', () => setTimeout(connect, 2000));
+}
 
-  function moveCursor(id, x, y) {
-    const u = remoteUsers.get(id);
-    if (!u) return;
-    u.el.style.left = (x * canvasArea.offsetWidth)  + 'px';
-    u.el.style.top  = (y * canvasArea.offsetHeight) + 'px';
-  }
-
-  function removeCursor(id) {
-    const u = remoteUsers.get(id);
-    if (u) { u.el.remove(); remoteUsers.delete(id); }
-  }
-
-  function rebuildUserList() {
-    usersList.innerHTML = '';
-    remoteUsers.forEach(u => {
-      const row = document.createElement('div');
-      row.className = 'user-row';
-      row.innerHTML =
-        `<div class="user-row-dot" style="background:${u.color}"></div>` +
-        `<span>${u.username}</span>`;
-      usersList.appendChild(row);
-    });
-  }
-
-  let ws;
-
-  function connect() {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${proto}://${location.host}`);
-
-    ws.addEventListener('open', () => {
-      ws.send(JSON.stringify({ type: 'join', username: myUsername }));
-    });
-
-    ws.addEventListener('message', e => {
-      const msg = JSON.parse(e.data);
-
-      if (msg.type === 'init') {
-        myId    = msg.id;
-        myColor = msg.color;
-        document.getElementById('my-dot').style.background  = myColor;
-        document.getElementById('my-name').textContent      = myUsername;
-        msg.users.forEach(u => {
-          if (u.id !== myId) getOrCreateCursor(u.id, u.color, u.username);
-        });
-        rebuildUserList();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        msg.strokes.forEach(replayStroke);
-      }
-
-      if (msg.type === 'user_join' && msg.id !== myId) {
-        getOrCreateCursor(msg.id, msg.color, msg.username);
-        rebuildUserList();
-      }
-
-      if (msg.type === 'user_leave') {
-        removeCursor(msg.id);
-        rebuildUserList();
-      }
-
-      if (msg.type === 'cursor')   moveCursor(msg.id, msg.x, msg.y);
-      if (msg.type === 'stroke')   replayStroke(msg.stroke);
-      if (msg.type === 'clear_all') ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
-
-    ws.addEventListener('close', () => setTimeout(connect, 2000));
-  }
-
-  function joinApp() {
-    const name = document.getElementById('username-input').value.trim();
-    if (!name) return;
-    myUsername = name;
-    joinScreen.style.display = 'none';
-    appEl.classList.add('visible');
-    resizeCanvas();
-    connect();
-  }
-
-  document.getElementById('join-btn').addEventListener('click', joinApp);
-  document.getElementById('username-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') joinApp();
-  });
-
-  window.addEventListener('resize', resizeCanvas);
+// ── Join ───────────────────────────────────────────────────────────────────
+function joinApp() {
+  const name = document.getElementById('username-input').value.trim();
+  if (!name) return;
+  myUsername = name;
+  joinScreen.style.display = 'none';
+  appEl.classList.add('visible');
+  resizeCanvas();
+  connect();
+}
+document.getElementById('join-btn').addEventListener('click', joinApp);
+document.getElementById('username-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinApp();
+});
+window.addEventListener('resize', resizeCanvas);
 </script>
 </body>
 </html>
