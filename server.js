@@ -17,7 +17,7 @@ const USER_COLORS = [
 
 let colorIndex = 0;
 const users   = new Map();
-const history = []; // { type: 'stroke'|'shape'|'fill', ...data }
+const history = [];
 let nextId = 1;
 
 function broadcast(data, exclude = null) {
@@ -67,7 +67,9 @@ wss.on('connection', (ws) => {
       if (!Array.isArray(pts) || pts.length < 2) return;
       const color = validColor(msg.color) ? msg.color : user.color;
       const size  = Math.max(1, Math.min(60, +msg.size || 4));
-      const op = { type: 'stroke', color, size, points: pts.map(p => ({ x: +p.x, y: +p.y })) };
+      const op = { type: 'stroke', color, size,
+        alpha: Math.min(1, Math.max(0.05, +msg.alpha || 1)),
+        points: pts.map(p => ({ x: +p.x, y: +p.y })) };
       pushHistory(op);
       broadcast({ type: 'op', op }, ws);
     }
@@ -78,6 +80,7 @@ wss.on('connection', (ws) => {
       const color = validColor(msg.color) ? msg.color : user.color;
       const size  = Math.max(1, Math.min(60, +msg.size || 4));
       const op = { type: 'shape', kind, color, size,
+        alpha: Math.min(1, Math.max(0.05, +msg.alpha || 1)),
         x1: +msg.x1, y1: +msg.y1, x2: +msg.x2, y2: +msg.y2 };
       pushHistory(op);
       broadcast({ type: 'op', op }, ws);
@@ -88,6 +91,33 @@ wss.on('connection', (ws) => {
       const op = { type: 'fill', color, x: +msg.x, y: +msg.y };
       pushHistory(op);
       broadcast({ type: 'op', op }, ws);
+    }
+
+    if (msg.type === 'text') {
+      const color = validColor(msg.color) ? msg.color : user.color;
+      const text  = String(msg.text || '').slice(0, 200);
+      if (!text) return;
+      const size = Math.max(8, Math.min(120, +msg.size || 20));
+      const op = { type: 'text', color, size, text, x: +msg.x, y: +msg.y,
+        font: msg.font || 'sans-serif' };
+      pushHistory(op);
+      broadcast({ type: 'op', op }, ws);
+    }
+
+    if (msg.type === 'spray') {
+      const pts = msg.points;
+      if (!Array.isArray(pts) || pts.length === 0) return;
+      const color = validColor(msg.color) ? msg.color : user.color;
+      const size  = Math.max(1, Math.min(60, +msg.size || 20));
+      const op = { type: 'spray', color, size, points: pts.map(p => ({ x: +p.x, y: +p.y })) };
+      pushHistory(op);
+      broadcast({ type: 'op', op }, ws);
+    }
+
+    if (msg.type === 'chat') {
+      const text = String(msg.text || '').trim().slice(0, 300);
+      if (!text) return;
+      broadcast({ type: 'chat', username: user.username, color: user.color, text });
     }
 
     if (msg.type === 'clear_all') {
