@@ -1,6 +1,5 @@
 const express = require('express');
 const http = require('http');
-<<<<<<< HEAD
 const WebSocket = require('ws');
 const path = require('path');
 
@@ -38,7 +37,6 @@ wss.on('connection', (ws) => {
 
   users.set(ws, { id, username: null, color });
 
-  // Send initial state
   ws.send(JSON.stringify({
     type: 'init',
     id,
@@ -63,7 +61,7 @@ wss.on('connection', (ws) => {
       broadcast({ type: 'user_join', id: user.id, username, color: user.color }, ws);
     }
 
-    if (!user.username) return; // must have username to do anything else
+    if (!user.username) return;
 
     if (msg.type === 'cursor') {
       const x = Number(msg.x); const y = Number(msg.y);
@@ -72,7 +70,6 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'stroke') {
-      // points: [{x,y},...], color, size
       const pts = msg.points;
       if (!Array.isArray(pts) || pts.length < 2) return;
       const color = /^#[0-9a-fA-F]{6}$/.test(msg.color) ? msg.color : user.color;
@@ -83,7 +80,7 @@ wss.on('connection', (ws) => {
       broadcast({ type: 'stroke', stroke }, ws);
     }
 
-    if (msg.type === 'clear_all' && user.username) {
+    if (msg.type === 'clear_all') {
       strokes.length = 0;
       broadcast({ type: 'clear_all' });
     }
@@ -98,40 +95,3 @@ wss.on('connection', (ws) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`http://localhost:${PORT}`));
-=======
-const socketIo = require('socket.io');
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
-
-const PORT = process.env.PORT || 3000;
-
-// Serve static files from the 'public' directory
-app.use(express.static('public'));
-
-// Handle socket connections
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  // Listen for drawing events from clients
-  socket.on('draw', (data) => {
-    // Broadcast the drawing data to all other connected clients
-    socket.broadcast.emit('draw', data);
-  });
-
-  // Listen for clear canvas events
-  socket.on('clear', () => {
-    // Broadcast clear event to all other clients
-    socket.broadcast.emit('clear');
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
-
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
->>>>>>> 68c555fabb2f244d1c99e90e0252ffb98cdc86b7
