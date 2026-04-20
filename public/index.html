@@ -1,139 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<<<<<<< HEAD
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sdílené Malování</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'MS Sans Serif', Tahoma, sans-serif;
-      background-color: #c0c0c0;
-      overflow: hidden;
-    }
-
-    .window {
-      width: 100vw;
-      height: 100vh;
-      background-color: #c0c0c0;
-      border: 2px outset #c0c0c0;
-    }
-
-    .title-bar {
-      background: linear-gradient(to right, #000080, #1084d0);
-      color: white;
-      padding: 2px 4px;
-      font-size: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .title-bar .title {
-      font-weight: bold;
-    }
-
-    .title-bar .controls {
-      display: flex;
-      gap: 2px;
-    }
-
-    .title-bar .control-btn {
-      width: 16px;
-      height: 14px;
-      background: #c0c0c0;
-      border: 1px outset #c0c0c0;
-      cursor: pointer;
-      font-size: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .menu-bar {
-      background-color: #c0c0c0;
-      border-bottom: 1px solid #808080;
-      padding: 2px;
-    }
-
-    .menu-item {
-      display: inline-block;
-      padding: 2px 8px;
-      background-color: #c0c0c0;
-      border: 1px solid transparent;
-      cursor: pointer;
-      font-size: 12px;
-      margin-right: 4px;
-    }
-
-    .menu-item:hover {
-      background-color: #d0d0d0;
-      border: 1px inset #c0c0c0;
-    }
-
-    .toolbar {
-      position: absolute;
-      left: 4px;
-      top: 60px;
-      width: 56px;
-      background-color: #c0c0c0;
-      border: 2px outset #c0c0c0;
-      padding: 4px;
-    }
-
-    .tool-btn {
-      width: 40px;
-      height: 36px;
-      background-color: #c0c0c0;
-      border: 1px outset #c0c0c0;
-      cursor: pointer;
-      margin-bottom: 2px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      position: relative;
-    }
-
-    .tool-btn:hover {
-      background-color: #d0d0d0;
-    }
-
-    .tool-btn.active {
-      background-color: #a0a0a0;
-      border: 1px inset #c0c0c0;
-    }
-
-    .tool-btn i {
-      font-size: 16px;
-      margin-bottom: 2px;
-    }
-
-    .canvas-container {
-      position: absolute;
-      left: 72px;
-      top: 60px;
-      right: 4px;
-      bottom: 80px;
-      background-color: #c0c0c0;
-      border: 2px inset #c0c0c0;
-      padding: 4px;
-      overflow: auto;
-    }
-
-    #canvas {
-      display: block;
-      background-color: white;
-      border: 1px solid #000;
-=======
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Malování</title>
@@ -151,271 +18,6 @@
     h1 {
       display: none;
     }
-<<<<<<< HEAD
-
-    #join-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 40px 48px;
-      display: flex; flex-direction: column; gap: 16px;
-      min-width: 300px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.6);
-    }
-
-    #join-box h1 { font-size: 1.4rem; font-weight: 600; }
-    #join-box p  { font-size: .85rem; color: var(--muted); }
-
-    #join-box input {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 10px 14px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color .15s;
-    }
-    #join-box input:focus { border-color: #555; }
-
-    #join-btn {
-      background: var(--text);
-      color: var(--bg);
-      border: none; border-radius: 8px;
-      padding: 10px;
-      font-size: 1rem; font-weight: 600;
-      cursor: pointer;
-      transition: opacity .15s;
-    }
-    #join-btn:hover { opacity: .85; }
-
-    /* Main layout */
-    #app { display: none; flex-direction: column; height: 100vh; }
-    #app.visible { display: flex; }
-
-    /* Toolbar */
-    #toolbar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 8px 14px;
-      display: flex; align-items: center; gap: 10px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .tool-label { font-size: .75rem; color: var(--muted); }
-
-    #palette { display: flex; gap: 5px; }
-
-    .swatch {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: transform .1s, border-color .1s;
-    }
-    .swatch:hover { transform: scale(1.15); }
-    .swatch.active { border-color: #fff; transform: scale(1.2); }
-
-    #custom-color {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      cursor: pointer;
-      padding: 0; background: none;
-    }
-
-    .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
-
-    #size-slider { accent-color: var(--text); width: 90px; }
-
-    #eraser-btn, #clear-btn {
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: .8rem;
-      cursor: pointer;
-    }
-    #eraser-btn:hover, #clear-btn:hover { background: #2a2a2a; }
-    #eraser-btn.active { border-color: #888; background: #2a2a2a; }
-    #clear-btn { color: #e74c3c; border-color: #e74c3c44; }
-
-    #my-chip {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
-      font-size: .8rem; color: var(--muted);
-    }
-    #my-dot { width: 10px; height: 10px; border-radius: 50%; }
-
-    /* Canvas area */
-    #canvas-area {
-      flex: 1; position: relative; overflow: hidden;
-      background: #fff;
->>>>>>> 9fc6f8d60e749705f78ac4adfdfbe96b2b6463bf
-      cursor: crosshair;
-      max-width: 100%;
-      max-height: 100%;
-    }
-
-<<<<<<< HEAD
-    .color-palette {
-      position: absolute;
-      left: 72px;
-      bottom: 4px;
-      height: 64px;
-      right: 4px;
-      background-color: #c0c0c0;
-      border: 2px outset #c0c0c0;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .color-preset {
-      width: 24px;
-      height: 24px;
-      border: 1px solid #000;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .color-preset.selected {
-      border: 2px solid #fff;
-      box-shadow: 0 0 0 1px #000;
-    }
-
-    .color-picker-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-left: 8px;
-    }
-
-    #colorPicker {
-      width: 40px;
-      height: 24px;
-      border: 1px solid #000;
-      cursor: pointer;
-    }
-
-    .brush-size-container {
-      margin-left: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #brushSize {
-      width: 120px;
-      height: 20px;
-    }
-
-    #brushSizeValue {
-      font-size: 10px;
-      margin-top: 2px;
-    }
-
-    .shape-selector {
-      margin-left: 8px;
-      display: flex;
-      gap: 4px;
-    }
-
-    .brush-shape {
-      width: 24px;
-      height: 24px;
-      border: 1px solid #808080;
-      cursor: pointer;
-      background-color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .brush-shape.selected {
-      border: 2px solid #000;
-    }
-
-    .brush-shape.circle::before {
-      content: '';
-      width: 12px;
-      height: 12px;
-      background-color: #000;
-      border-radius: 50%;
-    }
-
-    .brush-shape.square::before {
-      content: '';
-      width: 12px;
-      height: 12px;
-      background-color: #000;
-    }
-
-    .zoom-controls {
-      margin-left: 8px;
-      display: flex;
-      gap: 2px;
-    }
-
-    .zoom-controls button {
-      padding: 2px 8px;
-      font-size: 10px;
-      background-color: #c0c0c0;
-      border: 1px outset #c0c0c0;
-      cursor: pointer;
-    }
-
-    .zoom-controls button:hover {
-      background-color: #d0d0d0;
-    }
-
-    #zoomLevel {
-      font-size: 10px;
-      align-self: center;
-      margin-left: 4px;
-    }
-
-    .status-bar {
-      position: absolute;
-      bottom: 72px;
-      left: 72px;
-      right: 4px;
-      height: 20px;
-      background-color: #c0c0c0;
-      border: 1px inset #c0c0c0;
-      padding: 2px 4px;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-    }
-
-    .clear-btn {
-      position: absolute;
-      right: 8px;
-      top: 4px;
-      padding: 2px 8px;
-      font-size: 10px;
-      background-color: #c0c0c0;
-      border: 1px outset #c0c0c0;
-      cursor: pointer;
-    }
-
-    .clear-btn:hover {
-      background-color: #d0d0d0;
-=======
-    #main-canvas { position: absolute; top: 0; left: 0; }
-
-    /* Remote cursors */
-    .remote-cursor {
-      position: absolute;
-      pointer-events: none;
-      transform: translate(-4px, -4px);
-      display: flex; flex-direction: column; align-items: flex-start;
-      gap: 3px;
-=======
     #canvas {
       flex: 1;
       display: block;
@@ -431,7 +33,6 @@
       gap: 15px;
       flex-wrap: wrap;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
->>>>>>> d30486cb21efc686f2e907c5db8ede4c3c324cbf
     }
     label {
       color: white;
@@ -449,21 +50,6 @@
       border-radius: 4px;
       transition: background-color 0.2s;
     }
-<<<<<<< HEAD
-
-    /* Users panel */
-    #users-panel {
-      position: absolute;
-      bottom: 12px; right: 12px;
-      background: rgba(15,15,15,.75);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: .75rem;
-      max-width: 160px;
-      backdrop-filter: blur(6px);
->>>>>>> 9fc6f8d60e749705f78ac4adfdfbe96b2b6463bf
-=======
     button:hover {
       background-color: #45a049;
     }
@@ -482,6 +68,13 @@
       font-size: 14px;
       min-width: 25px;
     }
+    select {
+      font-size: 14px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
     .zoom-controls {
       display: flex;
       gap: 8px;
@@ -492,131 +85,10 @@
       font-size: 14px;
       min-width: 50px;
       text-align: center;
->>>>>>> d30486cb21efc686f2e907c5db8ede4c3c324cbf
     }
   </style>
 </head>
 <body>
-<<<<<<< HEAD
-<<<<<<< HEAD
-  <div class="window">
-    <div class="title-bar">
-      <div class="title">Sdílené Malování</div>
-      <div class="controls">
-        <button class="control-btn" title="Minimize">_</button>
-        <button class="control-btn" title="Maximize">□</button>
-        <button class="control-btn" title="Close">×</button>
-      </div>
-    </div>
-
-    <div class="menu-bar">
-      <div class="menu-item">Soubor</div>
-      <div class="menu-item">Úpravy</div>
-      <div class="menu-item">Zobrazení</div>
-      <div class="menu-item">Obrázek</div>
-      <div class="menu-item">Možnosti</div>
-      <div class="menu-item">Nápověda</div>
-    </div>
-
-    <div class="toolbar">
-      <button id="brushBtn" class="tool-btn active" title="Štětec">
-        <i class="fas fa-paint-brush"></i>
-        <span>Brush</span>
-      </button>
-      <button id="eraserBtn" class="tool-btn" title="Guma">
-        <i class="fas fa-eraser"></i>
-        <span>Eraser</span>
-      </button>
-    </div>
-
-    <div class="canvas-container">
-      <canvas id="canvas" width="800" height="600"></canvas>
-    </div>
-
-    <div class="color-palette">
-      <div id="colorPresets">
-        <div class="color-preset" style="background-color: #000000;" data-color="#000000"></div>
-        <div class="color-preset" style="background-color: #808080;" data-color="#808080"></div>
-        <div class="color-preset" style="background-color: #800000;" data-color="#800000"></div>
-        <div class="color-preset" style="background-color: #808000;" data-color="#808000"></div>
-        <div class="color-preset" style="background-color: #008000;" data-color="#008000"></div>
-        <div class="color-preset" style="background-color: #008080;" data-color="#008080"></div>
-        <div class="color-preset" style="background-color: #000080;" data-color="#000080"></div>
-        <div class="color-preset" style="background-color: #800080;" data-color="#800080"></div>
-        <div class="color-preset" style="background-color: #808040;" data-color="#808040"></div>
-        <div class="color-preset" style="background-color: #004080;" data-color="#004080"></div>
-        <div class="color-preset" style="background-color: #408080;" data-color="#408080"></div>
-        <div class="color-preset" style="background-color: #400080;" data-color="#400080"></div>
-        <div class="color-preset" style="background-color: #804000;" data-color="#804000"></div>
-        <div class="color-preset" style="background-color: #008040;" data-color="#008040"></div>
-        <div class="color-preset" style="background-color: #408000;" data-color="#408000"></div>
-        <div class="color-preset" style="background-color: #000040;" data-color="#000040"></div>
-        <div class="color-preset" style="background-color: #400040;" data-color="#400040"></div>
-        <div class="color-preset" style="background-color: #404000;" data-color="#404000"></div>
-        <div class="color-preset" style="background-color: #004000;" data-color="#004000"></div>
-        <div class="color-preset" style="background-color: #004040;" data-color="#004040"></div>
-        <div class="color-preset" style="background-color: #400000;" data-color="#400000"></div>
-        <div class="color-preset" style="background-color: #000000;" data-color="#000000"></div>
-        <div class="color-preset" style="background-color: #FFFFFF;" data-color="#FFFFFF"></div>
-      </div>
-
-      <div class="color-picker-container">
-        <label for="colorPicker" style="font-size: 10px;">Barvy</label>
-        <input type="color" id="colorPicker" value="#000000">
-      </div>
-
-      <div class="brush-size-container">
-        <label for="brushSize" style="font-size: 10px;">Velikost</label>
-        <input type="range" id="brushSize" min="1" max="50" value="5">
-        <span id="brushSizeValue">5</span>
-      </div>
-
-      <div class="shape-selector">
-        <div class="brush-shape circle selected" data-shape="circle" title="Kruh"></div>
-        <div class="brush-shape square" data-shape="square" title="Čtverec"></div>
-      </div>
-
-      <div class="zoom-controls">
-        <button id="zoomInBtn" title="Přiblížit">+</button>
-        <button id="zoomOutBtn" title="Oddálit">-</button>
-        <button id="resetZoomBtn" title="Reset">1:1</button>
-        <span id="zoomLevel">100%</span>
-      </div>
-
-      <button id="clearBtn" class="clear-btn" title="Vymazat vše">Vymazat</button>
-    </div>
-
-    <div class="status-bar">
-      Pro kreslení použijte myš nebo dotyk. Připojeno uživatelů: <span id="userCount">1</span>
-    </div>
-  </div>
-=======
->>>>>>> 9fc6f8d60e749705f78ac4adfdfbe96b2b6463bf
-
-<div id="join-screen">
-  <div id="join-box">
-    <h1>Malování</h1>
-    <p>Sdílená kreslicí plocha v reálném čase.</p>
-    <input id="username-input" maxlength="24" placeholder="Tvoje jméno…" autocomplete="off" />
-    <button id="join-btn">Připojit se</button>
-  </div>
-</div>
-
-<div id="app">
-  <div id="toolbar">
-    <span class="tool-label">Barva</span>
-    <div id="palette"></div>
-    <input type="color" id="custom-color" title="Vlastní barva" />
-    <div class="sep"></div>
-    <span class="tool-label">Velikost</span>
-    <input type="range" id="size-slider" min="1" max="40" value="5" />
-    <div class="sep"></div>
-    <button id="eraser-btn">Guma</button>
-    <button id="clear-btn">Smazat vše</button>
-    <div id="my-chip">
-      <div id="my-dot"></div>
-      <span id="my-name"></span>
-=======
   <h1>Sdílené Malování v Reálném Čase</h1>
   <canvas id="canvas"></canvas>
   <div class="controls">
@@ -625,11 +97,16 @@
     <label for="brushSize">Štětec:</label>
     <input type="range" id="brushSize" min="1" max="50" value="5">
     <span id="brushSizeValue">5</span>
+    <label for="toolSelect">Nástroj:</label>
+    <select id="toolSelect">
+      <option value="brush">Štětec</option>
+      <option value="line">Čára</option>
+      <option value="square">Čtverec</option>
+    </select>
     <div class="zoom-controls">
       <button id="zoomOut">−</button>
       <span id="zoomLevel">100%</span>
       <button id="zoomIn">+</button>
->>>>>>> d30486cb21efc686f2e907c5db8ede4c3c324cbf
     </div>
     <button id="clearBtn">Vymazat</button>
   </div>

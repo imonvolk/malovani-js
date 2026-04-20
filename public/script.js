@@ -3,77 +3,169 @@ const ctx = canvas.getContext('2d');
 const colorPicker = document.getElementById('colorPicker');
 const brushSize = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
+const toolSelect = document.getElementById('toolSelect');
 const clearBtn = document.getElementById('clearBtn');
+const zoomInBtn = document.getElementById('zoomIn');
+const zoomOutBtn = document.getElementById('zoomOut');
+const zoomLevelDisplay = document.getElementById('zoomLevel');
 
 const socket = io();
+
+let currentTool = 'brush';
+let currentShape = null;
+
+// Canvas state
+let drawingHistory = [];
+let zoomLevel = 1;
+const minZoom = 0.5;
+const maxZoom = 3;
+const zoomStep = 0.2;
+let panX = 0;
+let panY = 0;
+
+// Initialize canvas size
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - 60; // Account for control bar
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Drawing state
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+// Redraw canvas based on zoom and pan
+function redrawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(panX, panY);
+  ctx.scale(zoomLevel, zoomLevel);
+  
+  for (const stroke of drawingHistory) {
+    drawStroke(stroke);
+  }
+
+  if (currentShape) {
+    drawStroke(currentShape);
+  }
+  
+  ctx.restore();
+}
+
+// Draw a single stroke (circle)
+function drawStroke(stroke) {
+  if (stroke.type === 'brush') {
+    ctx.fillStyle = stroke.color;
+    ctx.beginPath();
+    ctx.arc(stroke.x, stroke.y, stroke.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (stroke.type === 'line') {
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(stroke.x0, stroke.y0);
+    ctx.lineTo(stroke.x1, stroke.y1);
+    ctx.stroke();
+  } else if (stroke.type === 'square') {
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size;
+    ctx.strokeRect(
+      Math.min(stroke.x0, stroke.x1),
+      Math.min(stroke.y0, stroke.y1),
+      Math.abs(stroke.x1 - stroke.x0),
+      Math.abs(stroke.y1 - stroke.y0)
+    );
+  }
+}
 
 // Update brush size display
 brushSize.addEventListener('input', () => {
   brushSizeValue.textContent = brushSize.value;
 });
 
-// Drawing state
-let isDrawing = false;
-let lastX = 0;
-let lastY = 0;
-let currentTool = 'brush'; // 'brush' or 'eraser'
-let currentShape = 'circle'; // 'circle' or 'square'
-let zoom = 1;
-let panX = 0;
-let panY = 0;
-
-// Set initial brush properties
-ctx.lineJoin = 'round';
-ctx.lineCap = 'round';
-ctx.lineWidth = brushSize.value;
-ctx.strokeStyle = colorPicker.value;
+// Tool selection
+toolSelect.addEventListener('change', () => {
+  currentTool = toolSelect.value;
+});
 
 // Update brush properties when changed
 colorPicker.addEventListener('change', () => {
-  ctx.strokeStyle = colorPicker.value;
+  // No special action needed
 });
 
-brushSize.addEventListener('input', () => {
-  ctx.lineWidth = brushSize.value;
+// Zoom functions
+function setZoom(newZoom) {
+  zoomLevel = Math.max(minZoom, Math.min(maxZoom, newZoom));
+  zoomLevelDisplay.textContent = Math.round(zoomLevel * 100) + '%';
+  redrawCanvas();
+}
+
+zoomInBtn.addEventListener('click', () => {
+  setZoom(zoomLevel + zoomStep);
+});
+
+zoomOutBtn.addEventListener('click', () => {
+  setZoom(zoomLevel - zoomStep);
 });
 
 // Drawing functions
-function drawShape(x, y) {
-  const size = parseInt(brushSize.value);
-  ctx.save();
-  ctx.translate(x, y);
-
-  if (currentShape === 'circle') {
-    ctx.beginPath();
-    ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
-    ctx.fill();
-  } else if (currentShape === 'square') {
-    ctx.fillRect(-size / 2, -size / 2, size, size);
-  }
-
-  ctx.restore();
-}
-
 function draw(e) {
   if (!isDrawing) return;
 
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
+  // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+  const x = (e.offsetX - panX) / zoomLevel;
+  const y = (e.offsetY - panY) / zoomLevel;
 
-  // Send drawing data to server
-  socket.emit('draw', {
-    x0: lastX,
-    y0: lastY,
-    x1: e.offsetX,
-    y1: e.offsetY,
-    color: ctx.strokeStyle,
-    size: ctx.lineWidth
-  });
+  if (currentTool === 'brush') {
+    const dx = x - lastX;
+    const dy = y - lastY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.ceil(distance) + 1;
 
-  lastX = x;
-  lastY = y;
+    for (let i = 0; i <= steps; i++) {
+      const t = steps > 0 ? i / steps : 0;
+      const interpX = lastX + dx * t;
+      const interpY = lastY + dy * t;
+
+      const stroke = {
+        type: 'brush',
+        x: interpX,
+        y: interpY,
+        color: colorPicker.value,
+        size: brushSize.value
+      };
+      drawingHistory.push(stroke);
+    }
+
+    redrawCanvas();
+
+    socket.emit('draw', {
+      type: 'brush',
+      x0: lastX,
+      y0: lastY,
+      x1: x,
+      y1: y,
+      color: colorPicker.value,
+      size: brushSize.value
+    });
+
+    lastX = x;
+    lastY = y;
+  } else {
+    currentShape = {
+      type: currentTool,
+      x0: lastX,
+      y0: lastY,
+      x1: x,
+      y1: y,
+      color: colorPicker.value,
+      size: brushSize.value
+    };
+    redrawCanvas();
+  }
 }
 
 // Event listeners for mouse
@@ -81,11 +173,23 @@ canvas.addEventListener('mousedown', (e) => {
   isDrawing = true;
   lastX = (e.offsetX - panX) / zoomLevel;
   lastY = (e.offsetY - panY) / zoomLevel;
+  currentShape = null;
 });
 
 canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', () => isDrawing = false);
-canvas.addEventListener('mouseout', () => isDrawing = false);
+canvas.addEventListener('mouseup', () => {
+  if (isDrawing && currentShape && currentTool !== 'brush') {
+    drawingHistory.push(currentShape);
+    socket.emit('draw', currentShape);
+    currentShape = null;
+    redrawCanvas();
+  }
+  isDrawing = false;
+});
+canvas.addEventListener('mouseout', () => {
+  currentShape = null;
+  isDrawing = false;
+});
 
 // Touch events for mobile
 canvas.addEventListener('touchstart', (e) => {
@@ -121,15 +225,31 @@ clearBtn.addEventListener('click', () => {
 
 // Listen for drawing events from other users
 socket.on('draw', (data) => {
-  ctx.strokeStyle = data.color;
-  ctx.lineWidth = data.size;
-  ctx.beginPath();
-  ctx.moveTo(data.x0, data.y0);
-  ctx.lineTo(data.x1, data.y1);
-  ctx.stroke();
-  // Reset to current user's settings
-  ctx.strokeStyle = colorPicker.value;
-  ctx.lineWidth = brushSize.value;
+  if (data.type === 'brush') {
+    const dx = data.x1 - data.x0;
+    const dy = data.y1 - data.y0;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.ceil(distance) + 1;
+
+    for (let i = 0; i <= steps; i++) {
+      const t = steps > 0 ? i / steps : 0;
+      const interpX = data.x0 + dx * t;
+      const interpY = data.y0 + dy * t;
+
+      const stroke = {
+        type: 'brush',
+        x: interpX,
+        y: interpY,
+        color: data.color,
+        size: data.size
+      };
+      drawingHistory.push(stroke);
+    }
+  } else {
+    drawingHistory.push(data);
+  }
+
+  redrawCanvas();
 });
 
 // Listen for clear events from other users
