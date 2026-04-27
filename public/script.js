@@ -30,4 +30,3 @@ startBtn.addEventListener('click', () => {
   document.title = `Malování | ${username}`;
   initApp();
 });
-
