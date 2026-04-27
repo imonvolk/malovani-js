@@ -1,13 +1,14 @@
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
-const path = require('path');
+const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const io = socketIo(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static('public'));
 
 const USER_COLORS = [
   '#e74c3c','#e67e22','#f1c40f','#2ecc71',
@@ -16,103 +17,50 @@ const USER_COLORS = [
 ];
 
 let colorIndex = 0;
-const users   = new Map();
-const history = [];
-let nextId = 1;
+let userCount = 0;
+const users = new Map();
 
-function broadcast(data, exclude = null) {
-  const msg = JSON.stringify(data);
-  wss.clients.forEach(c => {
-    if (c !== exclude && c.readyState === WebSocket.OPEN) c.send(msg);
-  });
-}
-
-function validColor(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c); }
-
-wss.on('connection', (ws) => {
-  const id = nextId++;
+io.on('connection', (socket) => {
+  userCount++;
   const color = USER_COLORS[colorIndex++ % USER_COLORS.length];
-  users.set(ws, { id, username: null, color });
+  users.set(socket.id, { username: null, color });
 
-  ws.send(JSON.stringify({
-    type: 'init', id, color, history,
-    users: [...users.values()].filter(u => u.username)
-      .map(u => ({ id: u.id, username: u.username, color: u.color })),
-  }));
+  io.emit('userCount', userCount);
 
-  ws.on('message', (raw) => {
-    let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
-    const user = users.get(ws);
+  socket.on('join', (data) => {
+    const user = users.get(socket.id);
     if (!user) return;
+    user.username = String(data.username || '').trim().slice(0, 24);
+    user.member = data.member;
 
-    if (msg.type === 'join') {
-      const username = String(msg.username || '').trim().slice(0, 24);
-      if (!username) return;
-      user.username = username;
-      broadcast({ type: 'user_join', id: user.id, username, color: user.color }, ws);
-      return;
-    }
+    socket.broadcast.emit('user_join', { id: socket.id, username: user.username, color });
 
-    if (!user.username) return;
-
-    if (msg.type === 'cursor') {
-      const x = +msg.x, y = +msg.y;
-      if (!isFinite(x) || !isFinite(y)) return;
-      broadcast({ type: 'cursor', id: user.id, x, y }, ws);
-    }
-
-    if (msg.type === 'stroke') {
-      const pts = msg.points;
-      if (!Array.isArray(pts) || pts.length < 2) return;
-      const color = validColor(msg.color) ? msg.color : user.color;
-      const size  = Math.max(1, Math.min(60, +msg.size || 4));
-      const op = { type: 'stroke', color, size, points: pts.map(p => ({ x: +p.x, y: +p.y })) };
-      pushHistory(op);
-      broadcast({ type: 'op', op }, ws);
-    }
-
-    if (msg.type === 'shape') {
-      const { kind } = msg;
-      if (!['line','rect','rect-fill','ellipse','ellipse-fill'].includes(kind)) return;
-      const color = validColor(msg.color) ? msg.color : user.color;
-      const size  = Math.max(1, Math.min(60, +msg.size || 4));
-      const op = { type: 'shape', kind, color, size,
-        x1: +msg.x1, y1: +msg.y1, x2: +msg.x2, y2: +msg.y2 };
-      pushHistory(op);
-      broadcast({ type: 'op', op }, ws);
-    }
-
-    if (msg.type === 'fill') {
-      const color = validColor(msg.color) ? msg.color : user.color;
-      const op = { type: 'fill', color, x: +msg.x, y: +msg.y };
-      pushHistory(op);
-      broadcast({ type: 'op', op }, ws);
-    }
-
-    if (msg.type === 'chat') {
-      const text = String(msg.text || '').trim().slice(0, 300);
-      if (!text) return;
-      broadcast({ type: 'chat', username: user.username, color: user.color, text }, ws);
-    }
-
-    if (msg.type === 'clear_all') {
-      history.length = 0;
-      broadcast({ type: 'clear_all' });
-    }
+    const userList = [];
+    users.forEach((u, id) => {
+      if (id !== socket.id && u.username) userList.push({ id, username: u.username, color: u.color });
+    });
+    socket.emit('users', userList);
   });
 
-  ws.on('close', () => {
-    const user = users.get(ws);
-    if (user) broadcast({ type: 'user_leave', id: user.id });
-    users.delete(ws);
+  socket.on('draw', (data) => {
+    socket.broadcast.emit('draw', data);
+  });
+
+  socket.on('clear', () => {
+    socket.broadcast.emit('clear');
+  });
+
+  socket.on('cursor', (data) => {
+    socket.broadcast.emit('cursor', { id: socket.id, x: data.x, y: data.y });
+  });
+
+  socket.on('disconnect', () => {
+    userCount--;
+    const user = users.get(socket.id);
+    users.delete(socket.id);
+    io.emit('userCount', userCount);
+    if (user && user.username) socket.broadcast.emit('user_leave', { id: socket.id });
   });
 });
 
-function pushHistory(op) {
-  history.push(op);
-  if (history.length > 20000) history.splice(0, history.length - 20000);
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

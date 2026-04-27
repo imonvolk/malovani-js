@@ -1,3 +1,5 @@
+let socket;
+
 function initApp() {
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
@@ -15,7 +17,7 @@ function initApp() {
   const brushShapes = document.querySelectorAll('.brush-shape');
   const userCount = document.getElementById('userCount');
 
-  const socket = io();
+  socket = io();
 
   socket.on('userCount', (count) => {
     userCount.textContent = count;
