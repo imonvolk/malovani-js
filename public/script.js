@@ -3,12 +3,10 @@ const appWindow = document.getElementById('appWindow');
 const usernameInput = document.getElementById('usernameInput');
 const userSelectButtons = document.querySelectorAll('.user-select-btn');
 const startBtn = document.getElementById('startBtn');
-const currentUserInfo = document.getElementById('currentUserInfo');
 
 let username = '';
 let selectedMember = '';
 
-// Login flow
 userSelectButtons.forEach((button) => {
   button.addEventListener('click', () => {
     selectedMember = button.dataset.member;
@@ -22,11 +20,12 @@ startBtn.addEventListener('click', () => {
     alert('Vyplňte prosím uživatelské jméno a vyberte profil.');
     return;
   }
-
   username = enteredName;
+  document.title = `Malování | ${username}`;
   loginScreen.classList.add('hidden');
   appWindow.classList.remove('hidden');
-  currentUserInfo.textContent = `${username} (${selectedMember})`;
-  document.title = `Malování | ${username}`;
-  initApp();
+
+  if (selectedMember === 'Osoba A') initApp();
+  else if (selectedMember === 'Osoba B' && typeof initB === 'function') initB();
+  else if (selectedMember === 'Osoba C' && typeof initC === 'function') initC();
 });
