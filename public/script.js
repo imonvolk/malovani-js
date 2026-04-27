@@ -29,4 +29,6 @@ startBtn.addEventListener('click', () => {
   currentUserInfo.textContent = `${username} (${selectedMember})`;
   document.title = `Malování | ${username}`;
   initApp();
+  if (selectedMember === 'Osoba B' && typeof initB === 'function') initB();
+  if (selectedMember === 'Osoba C' && typeof initC === 'function') initC();
 });
