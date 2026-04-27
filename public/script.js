@@ -28,5 +28,6 @@ startBtn.addEventListener('click', () => {
   appWindow.classList.remove('hidden');
   currentUserInfo.textContent = `${username} (${selectedMember})`;
   document.title = `Malování | ${username}`;
+  initApp();
 });
 
