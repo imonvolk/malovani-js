@@ -144,6 +144,7 @@
 
 <script>
 var myId,myColor,myUsername,ws;
+var username,selectedMember=null,socket;
 var activeTool='pen',brushColor='#e74c3c',brushSize=5,opacity=1,activeFont='sans-serif';
 var symmetry=false,showGrid=false,drawing=false,shapeStart=null,lastPt=null;
 var currentPoints=[],sprayBuffer=[],sprayInterval=null;
@@ -507,12 +508,14 @@ function connect(){
 
 function joinApp(){
   var name=document.getElementById('username-input').value.trim();if(!name)return;
-  myUsername=name;joinScreen.style.display='none';appEl.classList.add('visible');
+  myUsername=name;username=name;joinScreen.style.display='none';appEl.classList.add('visible');
   resizeCanvas();connect();
+  if(myUsername==='C'&&typeof initC==='function'){socket=ws;initC();}
 }
 document.getElementById('join-btn').addEventListener('click',joinApp);
 document.getElementById('username-input').addEventListener('keydown',function(e){if(e.key==='Enter')joinApp();});
 window.addEventListener('resize',resizeCanvas);
 </script>
+<script src="scriptC.js"></script>
 </body>
 </html>
