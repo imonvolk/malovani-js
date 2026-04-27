@@ -17,7 +17,7 @@ const USER_COLORS = [
 
 let colorIndex = 0;
 const users   = new Map();
-const history = []; // { type: 'stroke'|'shape'|'fill', ...data }
+const history = [];
 let nextId = 1;
 
 function broadcast(data, exclude = null) {
@@ -88,6 +88,12 @@ wss.on('connection', (ws) => {
       const op = { type: 'fill', color, x: +msg.x, y: +msg.y };
       pushHistory(op);
       broadcast({ type: 'op', op }, ws);
+    }
+
+    if (msg.type === 'chat') {
+      const text = String(msg.text || '').trim().slice(0, 300);
+      if (!text) return;
+      broadcast({ type: 'chat', username: user.username, color: user.color, text }, ws);
     }
 
     if (msg.type === 'clear_all') {
