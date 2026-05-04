@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const colorPicker = document.getElementById('colorPicker');
@@ -257,3 +258,13 @@ socket.on('clear', () => {
   drawingHistory = [];
   redrawCanvas();
 });
+=======
+function initC() {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const socket = io();
+
+  // tvůj kód tady
+  // máš přístup k: username, selectedMember, socket, canvas, ctx
+}
+>>>>>>> ad98c3e17e8ab624f18762c58b66052eeeef6f62

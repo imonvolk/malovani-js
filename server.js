@@ -1,13 +1,14 @@
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
-const path = require('path');
+const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const io = socketIo(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static('public'));
 
 const USER_COLORS = [
   '#e74c3c','#e67e22','#f1c40f','#2ecc71',
@@ -15,9 +16,24 @@ const USER_COLORS = [
   '#00bcd4','#ff5722','#8bc34a','#673ab7',
 ];
 
+<<<<<<< HEAD
+let userCount = 0;
+
+// Handle socket connections
+io.on('connection', (socket) => {
+  userCount++;
+  console.log('A user connected:', socket.id, 'Total users:', userCount);
+
+  // Send current user count to the new user
+  socket.emit('userCount', userCount);
+
+  // Broadcast updated user count to all users
+  io.emit('userCount', userCount);
+=======
 let colorIndex = 0;
 const users = new Map(); // ws → { id, username, color }
 const strokes = [];     // persistent canvas history
+>>>>>>> 9fc6f8d60e749705f78ac4adfdfbe96b2b6463bf
 
 let nextId = 1;
 
@@ -86,12 +102,25 @@ wss.on('connection', (ws) => {
     }
   });
 
+<<<<<<< HEAD
+  // Listen for clear canvas events
+  socket.on('clear', () => {
+    // Broadcast clear event to all other clients
+    socket.broadcast.emit('clear');
+  });
+
+  socket.on('disconnect', () => {
+    userCount--;
+    console.log('User disconnected:', socket.id, 'Total users:', userCount);
+    // Broadcast updated user count to remaining users
+    io.emit('userCount', userCount);
+=======
   ws.on('close', () => {
     const user = users.get(ws);
     if (user) broadcast({ type: 'user_leave', id: user.id });
     users.delete(ws);
+>>>>>>> 9fc6f8d60e749705f78ac4adfdfbe96b2b6463bf
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
