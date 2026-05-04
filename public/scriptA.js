@@ -272,12 +272,15 @@ function initA() {
     if (!isDrawing) return;
     const x = e.offsetX;
     const y = e.offsetY;
-    drawShape(x, y);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
     socket.emit('draw', {
-      x, y,
+      x0: lastX, y0: lastY,
+      x1: x, y1: y,
       color: ctx.strokeStyle,
       size: ctx.lineWidth,
-      shape: currentShape,
       tool: currentTool,
       username,
       member: selectedMember,
@@ -315,21 +318,14 @@ function initA() {
 
   socket.on('draw', (data) => {
     const savedStroke = ctx.strokeStyle;
-    const savedFill   = ctx.fillStyle;
     const savedWidth  = ctx.lineWidth;
     ctx.strokeStyle = data.color;
-    ctx.fillStyle   = data.color;
     ctx.lineWidth   = data.size;
-    if (data.shape) {
-      drawShape(data.x, data.y);
-    } else {
-      ctx.beginPath();
-      ctx.moveTo(data.x0, data.y0);
-      ctx.lineTo(data.x1, data.y1);
-      ctx.stroke();
-    }
+    ctx.beginPath();
+    ctx.moveTo(data.x0, data.y0);
+    ctx.lineTo(data.x1, data.y1);
+    ctx.stroke();
     ctx.strokeStyle = savedStroke;
-    ctx.fillStyle   = savedFill;
     ctx.lineWidth   = savedWidth;
   });
 
