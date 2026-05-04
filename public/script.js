@@ -25,7 +25,7 @@ startBtn.addEventListener('click', () => {
   loginScreen.classList.add('hidden');
   appWindow.classList.remove('hidden');
 
-  if (selectedMember === 'Osoba A') initApp();
+  if (selectedMember === 'Osoba A') initA();
   else if (selectedMember === 'Osoba B' && typeof initB === 'function') initB();
   else if (selectedMember === 'Osoba C' && typeof initC === 'function') initC();
 });

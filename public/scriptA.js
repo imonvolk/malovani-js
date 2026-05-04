@@ -1,4 +1,4 @@
-function initApp() {
+function initA() {
   const style = document.createElement('style');
   style.textContent = `
     #appWindow {
@@ -159,21 +159,21 @@ function initApp() {
     </div>
   `;
 
-  const canvas      = document.getElementById('a-canvas');
-  const ctx         = canvas.getContext('2d');
-  const colorPicker = document.getElementById('a-colorPicker');
-  const brushSize   = document.getElementById('a-brushSize');
+  const canvas         = document.getElementById('a-canvas');
+  const ctx            = canvas.getContext('2d');
+  const colorPicker    = document.getElementById('a-colorPicker');
+  const brushSize      = document.getElementById('a-brushSize');
   const brushSizeValue = document.getElementById('a-brushSizeValue');
-  const clearBtn    = document.getElementById('a-clearBtn');
-  const brushBtn    = document.getElementById('a-brushBtn');
-  const eraserBtn   = document.getElementById('a-eraserBtn');
-  const zoomInBtn   = document.getElementById('a-zoomInBtn');
-  const zoomOutBtn  = document.getElementById('a-zoomOutBtn');
-  const resetZoomBtn = document.getElementById('a-resetZoomBtn');
-  const zoomLevel   = document.getElementById('a-zoomLevel');
-  const colorPresets = document.querySelectorAll('.a-color-preset');
-  const brushShapes  = document.querySelectorAll('.a-brush-shape');
-  const userCount    = document.getElementById('a-userCount');
+  const clearBtn       = document.getElementById('a-clearBtn');
+  const brushBtn       = document.getElementById('a-brushBtn');
+  const eraserBtn      = document.getElementById('a-eraserBtn');
+  const zoomInBtn      = document.getElementById('a-zoomInBtn');
+  const zoomOutBtn     = document.getElementById('a-zoomOutBtn');
+  const resetZoomBtn   = document.getElementById('a-resetZoomBtn');
+  const zoomLevel      = document.getElementById('a-zoomLevel');
+  const colorPresets   = document.querySelectorAll('.a-color-preset');
+  const brushShapes    = document.querySelectorAll('.a-brush-shape');
+  const userCount      = document.getElementById('a-userCount');
 
   const socket = io();
 
